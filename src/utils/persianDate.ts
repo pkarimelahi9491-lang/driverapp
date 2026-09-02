@@ -1,20 +1,36 @@
-import moment from 'moment-jalaali';
-
-export function toPersianDate(date: Date | string | null | undefined): string {
+// تبدیل تاریخ میلادی به تاریخ شمسی با استفاده از موتور استاندارد Intl بدون نیاز به پکیج اضافی
+export const toPersianDate = (date: Date | string | number): string => {
   if (!date) return '';
-  return moment(date).format('jYYYY/jMM/jDD');
-}
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('fa-IR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+};
 
-export function toPersianDateTime(date: Date | string | null | undefined): string {
+export const toPersianDateTime = (date: Date | string | number): string => {
   if (!date) return '';
-  return moment(date).format('jYYYY/jMM/jDD HH:mm');
-}
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('fa-IR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(d);
+};
 
-export function parsePersianDate(persianDateStr: string): Date | null {
-  if (!persianDateStr) return null;
-  let m = moment(persianDateStr, 'jYYYY/jMM/jDD');
-  if (!m.isValid()) {
-    m = moment(persianDateStr, 'jYYYY-jMM-jDD');
-  }
-  return m.isValid() ? m.toDate() : null;
-}
+export const formatPersianDate = toPersianDate;
+export const formatPersianDateTime = toPersianDateTime;
+
+export default {
+  toPersianDate,
+  toPersianDateTime,
+  formatPersianDate,
+  formatPersianDateTime,
+};
