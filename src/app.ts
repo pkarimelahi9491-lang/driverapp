@@ -59,18 +59,23 @@ app.get('/', (_req, res) => {
   });
 });
 
-// Static Applications
-app.use(
-  '/driver',
-  express.static(path.join(__dirname, '../../driver-app'))
-);
+// ── Static Applications (Admin & Driver App) ────────────────────────
+const adminDistPath = path.join(process.cwd(), 'web-admin-react/dist');
+const driverDistPath = path.join(process.cwd(), 'driver-app');
 
-app.use(
-  '/admin',
-  express.static(path.join(__dirname, '../../web-admin-react/dist'))
-);
+// Admin Panel (SPA static files & fallback)
+app.use('/admin', express.static(adminDistPath));
+app.get('/admin/*', (_req, res) => {
+  res.sendFile(path.join(adminDistPath, 'index.html'));
+});
 
-// 404 Handler
+// Driver App (SPA static files & fallback)
+app.use('/driver', express.static(driverDistPath));
+app.get('/driver/*', (_req, res) => {
+  res.sendFile(path.join(driverDistPath, 'index.html'));
+});
+
+// 404 Handler (باید حتماً بعد از تمام روت‌ها و استاتیک‌ها باشد)
 app.use((_req, res) => {
   res.status(404).json({
     success: false,
