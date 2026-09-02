@@ -1,0 +1,273 @@
+// Arman Entekhab Fleet Management System - Database Schema
+// PostgreSQL with comprehensive fleet, trip, and financial tracking
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AUTH & USERS
+// ═══════════════════════════════════════════════════════════════════
+
+enum UserRole {
+  DRIVER
+  ADMIN
+  FINANCE
+}
+
+model User {
+  id            String    @id @default(uuid())
+  username      String    @unique
+  passwordHash  String    @map("password_hash")
+  role          UserRole  @default(DRIVER)
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  driver        Driver?
+
+  @@map("users")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DRIVERS
+// ═══════════════════════════════════════════════════════════════════
+
+model Driver {
+  id              String   @id @default(uuid())
+  userId          String   @unique @map("user_id")
+  fullName        String   @map("full_name")
+  driverCode      String   @unique @map("driver_code")
+  personnelCode   String   @unique @map("personnel_code")
+  phoneNumber     String   @map("phone_number")
+  nationalId      String?  @map("national_id")
+  carModel        String   @map("car_model")
+  carPlate        String   @map("car_plate")
+  joinDateJalali  String   @map("join_date_jalali")
+  isActive        Boolean  @default(true) @map("is_active")
+  description     String   @default("")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user            User           @relation(fields: [userId], references: [id])
+  trips           Trip[]
+  dailyWorkLogs   DailyWorkLog[]
+  routeRequests   RouteRequest[]
+
+  @@index([driverCode])
+  @@index([personnelCode])
+  @@index([isActive])
+  @@map("drivers")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LOCATIONS
+// ═══════════════════════════════════════════════════════════════════
+
+model Location {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  city      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  originRoutes      Route[] @relation("OriginLocation")
+  destinationRoutes Route[] @relation("DestinationLocation")
+
+  @@index([name])
+  @@index([city])
+  @@map("locations")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ROUTES & PRICING
+// ═══════════════════════════════════════════════════════════════════
+
+model Route {
+  id              String   @id @default(uuid())
+  routeCode       String   @unique @map("route_code")
+  originId        Int      @map("origin_id")
+  destinationId   Int      @map("destination_id")
+  currentPrice    BigInt   @map("current_price") // Tomans as integer - NEVER use float for money
+  currency        String   @default("TOMAN")
+  distanceKm      Int      @default(0) @map("distance_km")
+  ratePerKm       BigInt   @default(0) @map("rate_per_km")
+  isActive        Boolean  @default(true) @map("is_active")
+  description     String   @default("")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  origin          Location @relation("OriginLocation", fields: [originId], references: [id])
+  destination     Location @relation("DestinationLocation", fields: [destinationId], references: [id])
+  trips           Trip[]
+  priceHistories  RoutePriceHistory[]
+
+  @@index([routeCode])
+  @@index([originId, destinationId])
+  @@index([isActive])
+  @@map("routes")
+}
+
+model RoutePriceHistory {
+  id              Int      @id @default(autoincrement())
+  routeId         String   @map("route_id")
+  routeCode       String   @map("route_code")
+  oldPrice        BigInt   @map("old_price")
+  newPrice        BigInt   @map("new_price")
+  changedBy       String   @map("changed_by")
+  effectiveDate   String   @map("effective_date") // Jalali date
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  route           Route    @relation(fields: [routeId], references: [id])
+
+  @@index([routeId])
+  @@index([routeCode])
+  @@map("route_price_history")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DAILY WORK LOGS
+// ═══════════════════════════════════════════════════════════════════
+
+enum DailyWorkStatus {
+  DRAFT
+  PENDING_APPROVAL
+  FINALIZED
+  REJECTED
+}
+
+model DailyWorkLog {
+  id              String          @id @default(uuid())
+  driverId        String          @map("driver_id")
+  jalaliDate      String          @map("jalali_date")
+  totalTrips      Int             @default(0) @map("total_trips")
+  totalIncome     BigInt          @default(0) @map("total_income")
+  status          DailyWorkStatus @default(DRAFT)
+  finalizedAt     DateTime?       @map("finalized_at")
+  approvedBy      String?         @map("approved_by")
+  rejectionReason String?         @map("rejection_reason")
+  notes           String          @default("")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  driver          Driver          @relation(fields: [driverId], references: [id])
+  trips           Trip[]
+
+  @@unique([driverId, jalaliDate])
+  @@index([jalaliDate])
+  @@index([status])
+  @@index([driverId, jalaliDate])
+  @@map("daily_work_logs")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TRIPS
+// ═══════════════════════════════════════════════════════════════════
+
+model Trip {
+  id                String   @id @default(uuid())
+  tripCode          String   @unique @map("trip_code")
+  dailyWorkId       String   @map("daily_work_id")
+  driverId          String   @map("driver_id")
+  routeId           String   @map("route_id")
+  originTitle       String   @map("origin_title")
+  destinationTitle  String   @map("destination_title")
+  routeCode         String   @map("route_code")
+  snapshotPrice     BigInt   @map("snapshot_price") // CRITICAL: Immutable price at trip creation
+  currency          String   @default("TOMAN")
+  tripJalaliDate    String   @map("trip_jalali_date")
+  startTime         String   @map("start_time")
+  endTime           String?  @map("end_time")
+  description       String   @default("")
+  isCancelled       Boolean  @default(false) @map("is_cancelled")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  dailyWork         DailyWorkLog @relation(fields: [dailyWorkId], references: [id])
+  driver            Driver       @relation(fields: [driverId], references: [id])
+  route             Route        @relation(fields: [routeId], references: [id])
+
+  @@index([tripCode])
+  @@index([driverId, tripJalaliDate])
+  @@index([dailyWorkId])
+  @@index([tripJalaliDate])
+  @@map("trips")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FINANCIAL PERIODS
+// ═══════════════════════════════════════════════════════════════════
+
+enum PaymentStatus {
+  CALCULATING
+  PENDING_APPROVAL
+  APPROVED
+  SENT_TO_FINANCE
+  PAID
+}
+
+model FinancialPeriod {
+  id              Int           @id @default(autoincrement())
+  jalaliYearMonth String        @unique @map("jalali_year_month")
+  status          PaymentStatus @default(PENDING_APPROVAL)
+  approvedBy      String?       @map("approved_by")
+  paidAtJalali    String?       @map("paid_at_jalali")
+  totalAmount     BigInt        @default(0) @map("total_amount")
+  notes           String        @default("")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  @@map("financial_periods")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ROUTE REQUESTS (Driver requests new routes)
+// ═══════════════════════════════════════════════════════════════════
+
+enum RouteRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model RouteRequest {
+  id              Int                @id @default(autoincrement())
+  driverId        String             @map("driver_id")
+  originName      String             @map("origin_name")
+  destinationName String             @map("destination_name")
+  notes           String             @default("")
+  status          RouteRequestStatus @default(PENDING)
+  adminNote       String?            @map("admin_note")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  driver          Driver             @relation(fields: [driverId], references: [id])
+
+  @@index([status])
+  @@map("route_requests")
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AUDIT LOGS
+// ═══════════════════════════════════════════════════════════════════
+
+model AuditLog {
+  id              Int      @id @default(autoincrement())
+  userId          String?  @map("user_id")
+  operatorName    String   @map("operator_name")
+  operatorRole    String   @map("operator_role")
+  action          String
+  entityTitle     String   @map("entity_title")
+  details         String
+  jalaliTimestamp String   @map("jalali_timestamp")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([action])
+  @@index([operatorRole])
+  @@map("audit_logs")
+}
