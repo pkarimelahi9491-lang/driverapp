@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>اپلیکیشن رانندگان | هلدینگ آرمان انتخاب</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; }
+    
+    :root {
+      --navy-dark: #091426;
+      --navy-primary: #0F2444;
+      --gold-primary: #D97706;
+      --gold-accent: #F59E0B;
+      --emerald: #059669;
+      --emerald-light: #D1FAE5;
+      --slate-50: #F8FAFC;
+      --slate-100: #F1F5F9;
+      --slate-200: #E2E8F0;
+      --slate-400: #94A3B8;
+      --slate-500: #64748B;
+      --slate-700: #334155;
+      --slate-900: #0F172A;
+      --glass: rgba(204, 255, 255, 0.8);
+      --glass-border: rgba(102, 255, 255, 0.4);
+    }
+
+    body { background: linear-gradient(180deg, #091426 0%, #0F2444 50%, #091426 100%); min-height: 100vh; color: var(--slate-900); }
+
+    /* Phone Frame */
+    .phone-frame {
+      width: 390px; max-width: 100%; min-height: 100vh; margin: 0 auto;
+      background: linear-gradient(180deg, #091426 0%, #0F2444 50%, #091426 100%);
+      position: relative; overflow-x: hidden;
+    }
+
+    /* ─── LOGIN SCREEN ─── */
+    .login-screen {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px;
+    }
+    .login-card {
+      width: 100%; background: rgba(204,255,255,0.08); backdrop-filter: blur(24px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 32px 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+    }
+    .login-brand { text-align: center; margin-bottom: 28px; }
+    .login-badge {
+      width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 14px;
+      background: linear-gradient(135deg, var(--gold-primary), #B45309);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px; color: white; box-shadow: 0 8px 24px rgba(217,119,6,0.35);
+    }
+    .login-brand h1 { font-size: 20px; font-weight: 800; color: white; }
+    .login-brand p { font-size: 12px; color: var(--slate-400); margin-top: 4px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--slate-400); margin-bottom: 6px; }
+    .form-group input {
+      width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
+      color: white; font-size: 14px; font-family: 'Vazirmatn', sans-serif;
+      outline: none; transition: all 0.2s;
+    }
+    .form-group input:focus { border-color: #3B82F6; box-shadow: 0 0 12px rgba(59,130,246,0.3); }
+    .form-group input::placeholder { color: #475569; }
+    .login-btn {
+      width: 100%; padding: 14px; background: linear-gradient(135deg, #2563EB, #1D4ED8);
+      border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 700;
+      font-family: 'Vazirmatn', sans-serif; cursor: pointer; margin-top: 8px;
+      transition: all 0.2s;
+    }
+    .login-btn:hover { filter: brightness(1.1); box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+    .login-btn:active { transform: scale(0.98); }
+    .login-footer { text-align: center; margin-top: 16px; font-size: 11px; color: var(--slate-500); }
+    .error-msg {
+      background: rgba(220,38,38,0.15); border: 1px solid rgba(220,38,38,0.4);
+      border-radius: 10px; padding: 10px 14px; color: #FCA5A5; font-size: 12px;
+      margin-bottom: 12px; display: none;
+    }
+
+    /* ─── DRIVER HOME SCREEN ─── */
+    .driver-screen { display: none; min-height: 100vh; padding-bottom: 80px; }
+    .driver-screen.active { display: block; }
+
+    /* Profile Card */
+    .profile-card {
+      background: rgba(15,30,54,0.85); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px; padding: 16px; margin: 16px 16px 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .profile-left { display: flex; align-items: center; gap: 12px; }
+    .profile-avatar {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: white;
+    }
+    .profile-name { color: white; font-weight: 700; font-size: 15px; }
+    .profile-code { font-size: 11px; color: var(--slate-400); margin-top: 2px; }
+    .profile-badge {
+      background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.4);
+      padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; color: #93C5FD;
+    }
+
+    /* Calendar Bar */
+    .calendar-bar {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; margin: 12px 16px; padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .calendar-bar .date-text { color: var(--slate-900); font-weight: 700; font-size: 13px; background: rgba(255,255,255,0.7); padding: 4px 12px; border-radius: 8px; }
+    .calendar-bar .today-badge { background: var(--gold-primary); color: white; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
+    .cal-btn {
+      width: 32px; height: 32px; border-radius: 8px; border: none;
+      background: rgba(255,255,255,0.6); cursor: pointer; font-size: 14px; color: var(--slate-700);
+    }
+
+    /* Status Banner */
+    .status-banner {
+      margin: 12px 16px; padding: 12px 14px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .status-banner.draft { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35); }
+    .status-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .status-left i { font-size: 20px; color: var(--gold-primary); }
+    .status-text { font-size: 13px; font-weight: 700; color: #92400E; }
+    .status-sub { font-size: 11px; color: #B45309; margin-top: 2px; }
+    .status-pill { background: var(--gold-primary); color: white; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; margin-top: 12px; }
+    .stat-card {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px; padding: 14px;
+    }
+    .stat-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 8px; }
+    .stat-icon.blue { background: rgba(59,130,246,0.18); color: #60A5FA; }
+    .stat-icon.green { background: rgba(16,185,129,0.18); color: #34D399; }
+    .stat-title { font-size: 11px; color: var(--slate-500); }
+    .stat-value { font-size: 18px; font-weight: 800; color: white; margin-top: 2px; }
+
+    /* Monthly Banner */
+    .monthly-banner {
+      margin: 12px 16px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.35);
+      border-radius: 14px; padding: 14px;
+    }
+    .monthly-banner .title { font-size: 11px; color: #B45309; }
+    .monthly-banner .amount { font-size: 20px; font-weight: 800; color: var(--gold-primary); margin-top: 4px; }
+    .monthly-banner .sub { font-size: 10px; color: var(--slate-400); margin-top: 2px; }
+
+    /* Action Buttons */
+    .action-btns { padding: 0 16px; margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .btn-register {
+      width: 100%; padding: 14px; background: var(--gold-primary); border: none;
+      border-radius: 12px; color: white; font-size: 16px; font-weight: 700;
+      font-family: 'Vazirmatn', sans-serif; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-finalize {
+      width: 100%; padding: 12px; background: var(--emerald); border: none;
+      border-radius: 12px; color: white; font-size: 14px; font-weight: 700;
+      font-family: 'Vazirmatn', sans-serif; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+
+    /* Section Header */
+    .section-header {
+      padding: 0 16px; margin-top: 18px; display: flex;
+      justify-content: space-between; align-items: center;
+    }
+    .section-header h3 { font-size: 15px; font-weight: 700; color: var(--slate-900); background: rgba(255,255,255,0.7); padding: 4px 10px; border-radius: 8px; }
+    .section-header span { font-size: 11px; color: var(--slate-500); background: rgba(255,255,255,0.5); padding: 3px 8px; border-radius: 6px; }
+
+    /* Trip Card */
+    .trips-list { padding: 0 16px; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .trip-card {
+      background: rgba(255,255,255,0.7); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.3); border-radius: 14px; padding: 14px;
+    }
+    .trip-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .trip-code { font-family: monospace; font-size: 11px; color: var(--slate-500); background: var(--slate-100); padding: 2px 6px; border-radius: 4px; }
+    .trip-time { font-size: 11px; color: var(--slate-400); }
+    .trip-route { font-size: 13px; font-weight: 600; color: var(--slate-900); margin-bottom: 4px; }
+    .trip-route .arrow { color: var(--slate-400); margin: 0 4px; }
+    .trip-price { font-size: 16px; font-weight: 800; color: var(--emerald); }
+    .trip-price small { font-size: 11px; font-weight: 600; }
+    .trip-desc { font-size: 11px; color: var(--slate-500); margin-top: 4px; }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center; padding: 40px 20px; background: rgba(255,255,255,0.5);
+      border-radius: 14px; margin: 16px;
+    }
+    .empty-state i { font-size: 40px; color: var(--slate-300); }
+    .empty-state p { font-size: 13px; color: var(--slate-500); margin-top: 10px; }
+
+    /* Screen: Register Trip */
+    .register-screen { display: none; min-height: 100vh; background: linear-gradient(180deg, #091426, #0F2444); }
+    .register-screen.active { display: block; }
+    .reg-header {
+      padding: 16px; display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .reg-back { width: 36px; height: 36px; border-radius: 10px; border: none; background: rgba(255,255,255,0.1); color: white; font-size: 16px; cursor: pointer; }
+    .reg-title { color: white; font-weight: 700; font-size: 16px; }
+    .reg-subtitle { color: var(--slate-400); font-size: 11px; }
+    .reg-card {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; margin: 14px 16px; padding: 16px;
+    }
+    .reg-card h4 { font-size: 14px; font-weight: 700; color: #93C5FD; margin-bottom: 12px; }
+    .reg-field { margin-bottom: 12px; }
+    .reg-field label { display: block; font-size: 11px; color: var(--slate-400); margin-bottom: 4px; }
+    .reg-field select, .reg-field input {
+      width: 100%; padding: 10px 12px; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
+      color: white; font-size: 13px; font-family: 'Vazirmatn', sans-serif;
+    }
+    .reg-field select option { background: var(--navy-dark); color: white; }
+    .route-result {
+      background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.4);
+      border-radius: 14px; margin: 14px 16px; padding: 16px; display: none;
+    }
+    .route-result.active { display: block; }
+    .route-result .code { font-family: monospace; font-size: 20px; font-weight: 800; color: #34D399; text-align: center; }
+    .route-result .route-text { text-align: center; color: var(--slate-900); font-size: 13px; margin: 6px 0; background: rgba(255,255,255,0.5); padding: 6px 10px; border-radius: 8px; }
+    .route-result .price { text-align: center; font-size: 24px; font-weight: 800; color: var(--emerald); margin-top: 8px; }
+    .route-result .price small { font-size: 12px; }
+    .btn-confirm {
+      width: calc(100% - 32px); margin: 14px 16px; padding: 14px;
+      background: var(--emerald); border: none; border-radius: 12px;
+      color: white; font-size: 16px; font-weight: 700;
+      font-family: 'Vazirmatn', sans-serif; cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-frame">
+
+    <!-- ═══════════ LOGIN SCREEN ═══════════ -->
+    <div class="login-screen" id="loginScreen">
+      <div class="login-card">
+        <div class="login-brand">
+          <div class="login-badge"><i class="fa-solid fa-shield-halved"></i></div>
+          <h1>ورود رانندگان</h1>
+          <p>هلدینگ آرمان انتخاب</p>
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-user"></i> نام کاربری</label>
+          <input type="text" id="loginUser" value="d101" placeholder="نام کاربری">
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-lock"></i> رمز عبور</label>
+          <input type="password" id="loginPass" value="driver123" placeholder="رمز عبور">
+        </div>
+        <div class="error-msg" id="loginError"><i class="fa-solid fa-circle-exclamation"></i> نام کاربری یا رمز اشتباه است</div>
+        <button class="login-btn" onclick="doLogin()"><i class="fa-solid fa-right-to-bracket"></i> ورود</button>
+        <div class="login-footer">🔒 ورود ایمن و رمزگذاری شده</div>
+      </div>
+    </div>
+
+    <!-- ═══════════ DRIVER HOME SCREEN ═══════════ -->
+    <div class="driver-screen" id="driverScreen">
+      <!-- Profile -->
+      <div class="profile-card">
+        <div class="profile-left">
+          <div class="profile-avatar"><i class="fa-solid fa-user"></i></div>
+          <div>
+            <div class="profile-name">علی رضایی</div>
+            <div class="profile-code">کد راننده: D-101 | پرسنلی: ۹۴۸۱۲</div>
+          </div>
+        </div>
+        <div class="profile-badge">راننده</div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="calendar-bar">
+        <button class="cal-btn" onclick="changeDay(-1)"><i class="fa-solid fa-chevron-right"></i></button>
+        <div>
+          <span class="today-badge">امروز</span>
+          <span class="date-text" id="currentDate">شنبه ۱ شهریور ۱۴۰۵</span>
+        </div>
+        <button class="cal-btn" onclick="changeDay(1)"><i class="fa-solid fa-chevron-left"></i></button>
+      </div>
+
+      <!-- Status -->
+      <div class="status-banner draft">
+        <div class="status-left">
+          <i class="fa-solid fa-clipboard-list"></i>
+          <div>
+            <div class="status-text">کارکرد این روز در حال ثبت می‌باشد</div>
+            <div class="status-sub">سفرهای خود را ثبت کرده و سپس ارسال کنید</div>
+          </div>
+        </div>
+        <div class="status-pill">در حال ثبت</div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="fa-solid fa-car"></i></div>
+          <div class="stat-title">تعداد سفرهای امروز</div>
+          <div class="stat-value" id="todayTrips">۲ سفر</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fa-solid fa-wallet"></i></div>
+          <div class="stat-title">درآمد امروز</div>
+          <div class="stat-value" id="todayIncome">۵۶۰,۰۰۰ ت</div>
+        </div>
+      </div>
+
+      <!-- Monthly -->
+      <div class="monthly-banner">
+        <div class="title">مجموع درآمد ماه جاری (شهریور)</div>
+        <div class="amount" id="monthIncome">۱۲,۵۰۰,۰۰۰ تومان</div>
+        <div class="sub">شامل کلیه سفرهای مصوب هلدینگ</div>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-btns">
+        <button class="btn-register" onclick="showRegister()"><i class="fa-solid fa-plus"></i> ثبت سفر جدید</button>
+        <button class="btn-finalize" onclick="finalizeDay()"><i class="fa-solid fa-check-double"></i> ارسال به مدیریت جهت تأیید (۲ سفر)</button>
+      </div>
+
+      <!-- Trips List -->
+      <div class="section-header">
+        <h3>لیست سفرهای امروز</h3>
+        <span>۲ سفر ثبت‌شده</span>
+      </div>
+      <div class="trips-list" id="tripsList">
+        <div class="trip-card">
+          <div class="trip-header">
+            <span class="trip-code">TRP-14050601-101</span>
+            <span class="trip-time">۰۷:۴۵</span>
+          </div>
+          <div class="trip-route">انبار مرکزی انتخاب <span class="arrow">←</span> شاهین شهر</div>
+          <div class="trip-price">۲,۷۰۰,۰۰۰ <small>تومان</small></div>
+          <div class="trip-desc">AR-01-01 | ۳۰ کیلومتر</div>
+        </div>
+        <div class="trip-card">
+          <div class="trip-header">
+            <span class="trip-code">TRP-14050601-102</span>
+            <span class="trip-time">۱۰:۳۰</span>
+          </div>
+          <div class="trip-route">انبار مرکزی انتخاب <span class="arrow">←</span> گلدیس</div>
+          <div class="trip-price">۳,۱۵۰,۰۰۰ <small>تومان</small></div>
+          <div class="trip-desc">AR-02-01 | ۳۵ کیلومتر</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ REGISTER TRIP SCREEN ═══════════ -->
+    <div class="register-screen" id="registerScreen">
+      <div class="reg-header">
+        <button class="reg-back" onclick="showHome()"><i class="fa-solid fa-arrow-right"></i></button>
+        <div>
+          <div class="reg-title">ثبت سفر جدید</div>
+          <div class="reg-subtitle">راننده: علی رضایی (D-101)</div>
+        </div>
+      </div>
+
+      <!-- Date & Time -->
+      <div class="reg-card">
+        <h4><i class="fa-solid fa-clock"></i> ۱. زمان و تاریخ</h4>
+        <div class="reg-field">
+          <label>تاریخ سفر</label>
+          <input type="text" value="شنبه ۱ شهریور ۱۴۰۵" readonly>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="reg-field"><label>ساعت شروع</label><input type="text" value="08:00" id="startTime"></div>
+          <div class="reg-field"><label>ساعت پایان</label><input type="text" placeholder="اختیاری" id="endTime"></div>
+        </div>
+      </div>
+
+      <!-- Origin & Destination -->
+      <div class="reg-card">
+        <h4><i class="fa-solid fa-map-location-dot"></i> ۲. انتخاب مبدأ و مقصد</h4>
+        <div class="reg-field">
+          <label>مبدأ مأموریت</label>
+          <select id="originSelect" onchange="lookupRoute()">
+            <option value="">انتخاب مبدأ...</option>
+            <option value="origin1" selected>انبار مرکزی انتخاب (مورچه خورت)</option>
+            <option value="origin2">کارخانه لوازم خانگی انتخاب (اسنوا)</option>
+            <option value="origin3">دفتر مرکزی اصفهان</option>
+          </select>
+        </div>
+        <div class="reg-field">
+          <label>مقصد مأموریت</label>
+          <select id="destSelect" onchange="lookupRoute()">
+            <option value="">انتخاب مقصد...</option>
+            <option value="dest_shahin">شاهین شهر</option>
+            <option value="dest_goldis">گلدیس</option>
+            <option value="dest_khoozozoo">خورزوق</option>
+            <option value="dest_17shahr">۱۷ شهریور</option>
+            <option value="dest_dastgerd">دستگرد</option>
+            <option value="dest_muqavemat">$resistance</option>
+            <option value="dest_khomeini">خمینی شهر</option>
+            <option value="dest_najaf">نجف آباد</option>
+            <option value="dest_foolad">فولاد شهر</option>
+            <option value="dest_natanz">نطنز</option>
+            <option value="dest_shahreza">شهرضا</option>
+            <option value="dest_mobarakeh">مبارکه</option>
+            <option value="dest_chadegan">چادگان</option>
+            <option value="dest_faridnagar">فریدن‌نگر</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Route Result -->
+      <div class="route-result" id="routeResult">
+        <div class="code" id="routeCode">AR-01-01</div>
+        <div class="route-text" id="routeText">انبار مرکزی انتخاب ← شاهین شهر</div>
+        <div class="price" id="routePrice">۲,۷۰۰,۰۰۰ <small>تومان</small></div>
+      </div>
+
+      <!-- Description -->
+      <div class="reg-card">
+        <div class="reg-field">
+          <label>توضیحات (اختیاری)</label>
+          <input type="text" placeholder="مثلاً: جابجایی کارشناسان..." id="tripDesc">
+        </div>
+      </div>
+
+      <!-- Confirm -->
+      <button class="btn-confirm" id="confirmBtn" onclick="confirmTrip()" disabled>
+        <i class="fa-solid fa-check"></i> تأیید و ثبت نهایی سفر
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    // Route data from CSV
+    const routes = {
+      'dest_shahin':    { code: 'AR-01-01', price: 2700000, name: 'شاهین شهر', km: 30 },
+      'dest_goldis':    { code: 'AR-02-01', price: 3150000, name: 'گلدیس', km: 35 },
+      'dest_khoozozoo': { code: 'AR-03-01', price: 3600000, name: 'خورزوق', km: 40 },
+      'dest_17shahr':   { code: 'AR-04-01', price: 4050000, name: '۱۷ شهریور', km: 45 },
+      'dest_dastgerd':  { code: 'AR-04-14', price: 4050000, name: 'دستگرد', km: 45 },
+      'dest_khomeini':  { code: 'AR-06-24', price: 4950000, name: 'خمینی شهر', km: 55 },
+      'dest_najaf':     { code: 'AR-12-05', price: 7650000, name: 'نجف آباد', km: 85 },
+      'dest_foolad':    { code: 'AR-14-02', price: 8550000, name: 'فولاد شهر', km: 95 },
+      'dest_natanz':    { code: 'AR-13-01', price: 8100000, name: 'نطنز', km: 90 },
+      'dest_shahreza':  { code: 'AR-15-05', price: 9000000, name: 'شهرضا', km: 100 },
+      'dest_mobarakeh': { code: 'AR-15-08', price: 9000000, name: 'مبارکه', km: 100 },
+      'dest_chadegan':  { code: 'AR-15-01', price: 9000000, name: 'چادگان', km: 100 },
+    };
+
+    function toPersianDigits(str) {
+      const p = ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'];
+      return String(str).replace(/[0-9]/g, w => p[+w]);
+    }
+
+    function formatMoney(n) {
+      return n.toLocaleString('fa-IR');
+    }
+
+    // Login
+    function doLogin() {
+      const u = document.getElementById('loginUser').value;
+      const p = document.getElementById('loginPass').value;
+      if (u === 'd101' && p === 'driver123') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('driverScreen').classList.add('active');
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+        setTimeout(() => document.getElementById('loginError').style.display = 'none', 3000);
+      }
+    }
+
+    // Register Trip
+    function showRegister() {
+      document.getElementById('driverScreen').classList.remove('active');
+      document.getElementById('registerScreen').classList.add('active');
+    }
+
+    function showHome() {
+      document.getElementById('registerScreen').classList.remove('active');
+      document.getElementById('driverScreen').classList.add('active');
+    }
+
+    function lookupRoute() {
+      const dest = document.getElementById('destSelect').value;
+      const result = document.getElementById('routeResult');
+      const btn = document.getElementById('confirmBtn');
+
+      if (dest && routes[dest]) {
+        const r = routes[dest];
+        document.getElementById('routeCode').textContent = r.code;
+        document.getElementById('routeText').textContent = 'انبار مرکزی انتخاب ← ' + r.name;
+        document.getElementById('routePrice').innerHTML = formatMoney(r.price) + ' <small>تومان</small>';
+        result.classList.add('active');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> تأیید و ثبت نهایی سفر (' + formatMoney(r.price) + ' تومان)';
+      } else {
+        result.classList.remove('active');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> لطفاً مسیر معتبر را انتخاب کنید';
+      }
+    }
+
+    function confirmTrip() {
+      const dest = document.getElementById('destSelect').value;
+      if (!dest || !routes[dest]) return;
+      const r = routes[dest];
+      const start = document.getElementById('startTime').value || '08:00';
+      const desc = document.getElementById('tripDesc').value;
+
+      // Add trip to list
+      const list = document.getElementById('tripsList');
+      const count = list.children.length + 1;
+      const code = 'TRP-14050601-' + (100 + count);
+
+      const card = document.createElement('div');
+      card.className = 'trip-card';
+      card.style.animation = 'fadeIn 0.3s ease';
+      card.innerHTML = `
+        <div class="trip-header">
+          <span class="trip-code">${code}</span>
+          <span class="trip-time">${start}</span>
+        </div>
+        <div class="trip-route">انبار مرکزی انتخاب <span class="arrow">←</span> ${r.name}</div>
+        <div class="trip-price">${formatMoney(r.price)} <small>تومان</small></div>
+        <div class="trip-desc">${r.code} | ${r.km} کیلومتر${desc ? ' | ' + desc : ''}</div>
+      `;
+      list.appendChild(card);
+
+      // Update stats
+      const trips = list.children.length;
+      let totalIncome = 0;
+      for (const child of list.children) {
+        const priceText = child.querySelector('.trip-price').textContent.replace(/[,،تومان\s]/g, '');
+        totalIncome += parseInt(priceText) || 0;
+      }
+      document.getElementById('todayTrips').textContent = toPersianDigits(trips) + ' سفر';
+      document.getElementById('todayIncome').textContent = formatMoney(totalIncome) + ' ت';
+      document.querySelector('.section-header span').textContent = toPersianDigits(trips) + ' سفر ثبت‌شده';
+      document.querySelector('.btn-finalize').innerHTML = '<i class="fa-solid fa-check-double"></i> ارسال به مدیریت جهت تأیید (' + toPersianDigits(trips) + ' سفر)';
+
+      showHome();
+    }
+
+    function finalizeDay() {
+      alert('✅ کارکرد روز با موفقیت به مدیریت ارسال شد.\n\nوضعیت: در انتظار تأیید');
+    }
+
+    function changeDay(dir) {
+      // Visual feedback only
+      const el = document.getElementById('currentDate');
+      el.style.opacity = '0.5';
+      setTimeout(() => el.style.opacity = '1', 200);
+    }
+
+    // Enter key login
+    document.getElementById('loginPass').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
+    document.getElementById('loginUser').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
+  </script>
+</body>
+</html>

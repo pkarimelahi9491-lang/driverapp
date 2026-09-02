@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>پنل مدیریت ناوگان | هلدینگ آرمان انتخاب</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; }
+    body { background: #F3F4F6; color: #111827; min-height: 100vh; }
+
+    /* ─── LOGIN ─── */
+    .login-page { min-height: 100vh; background: linear-gradient(135deg, #0c1c38, #060d19); display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .login-card { width: 100%; max-width: 420px; background: rgba(255,255,255,0.1); backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.2); border-radius: 24px; padding: 36px 28px; }
+    .login-brand { text-align: center; margin-bottom: 28px; }
+    .login-badge { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(135deg, #F59E0B, #B45309); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; color: white; margin-bottom: 14px; box-shadow: 0 8px 24px rgba(245,158,11,0.35); }
+    .login-brand h1 { font-size: 20px; font-weight: 800; color: white; }
+    .login-brand p { font-size: 12px; color: #94A3B8; margin-top: 4px; }
+    .lf { margin-bottom: 16px; }
+    .lf label { display: block; font-size: 12px; font-weight: 600; color: #94A3B8; margin-bottom: 6px; }
+    .lf input { width: 100%; padding: 12px 14px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; font-size: 14px; font-family: 'Vazirmatn', sans-serif; outline: none; }
+    .lf input:focus { border-color: #3B82F6; box-shadow: 0 0 12px rgba(59,130,246,0.3); }
+    .login-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #2563EB, #1D4ED8); border: none; border-radius: 12px; color: white; font-size: 16px; font-weight: 700; font-family: 'Vazirmatn', sans-serif; cursor: pointer; margin-top: 8px; }
+    .login-btn:hover { filter: brightness(1.1); }
+
+    /* ─── ADMIN LAYOUT ─── */
+    .admin-layout { display: none; min-height: 100vh; }
+    .admin-layout.active { display: flex; }
+    .sidebar { width: 260px; background: white; border-left: 1px solid #E5E7EB; min-height: 100vh; position: fixed; right: 0; top: 0; display: flex; flex-direction: column; }
+    .sidebar-brand { padding: 20px; border-bottom: 1px solid #F3F4F6; display: flex; align-items: center; gap: 12px; }
+    .sidebar-brand .badge { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #F59E0B, #B45309); display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; }
+    .sidebar-brand h2 { font-size: 13px; font-weight: 700; }
+    .sidebar-brand p { font-size: 11px; color: #6B7280; }
+    .sidebar-nav { flex: 1; padding: 12px; }
+    .nav-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; font-size: 13px; font-weight: 600; color: #6B7280; cursor: pointer; transition: all 0.15s; margin-bottom: 2px; }
+    .nav-link:hover { background: #F9FAFB; color: #111827; }
+    .nav-link.active { background: #EFF6FF; color: #2563EB; }
+    .nav-link i { width: 18px; font-size: 16px; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid #F3F4F6; }
+    .sidebar-footer .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .sidebar-footer .avatar { width: 36px; height: 36px; border-radius: 50%; background: #EFF6FF; display: flex; align-items: center; justify-content: center; color: #2563EB; font-weight: 700; font-size: 14px; }
+    .sidebar-footer .name { font-size: 13px; font-weight: 600; }
+    .sidebar-footer .role { font-size: 11px; color: #6B7280; }
+    .logout-btn { width: 100%; padding: 8px; border: none; background: #FEF2F2; color: #DC2626; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Vazirmatn', sans-serif; }
+
+    /* Main Content */
+    .main-content { margin-right: 260px; flex: 1; padding: 24px; min-height: 100vh; }
+    .page-header { margin-bottom: 20px; }
+    .page-header h1 { font-size: 22px; font-weight: 800; }
+    .page-header p { font-size: 13px; color: #6B7280; margin-top: 2px; }
+
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.15s; }
+    .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); transform: translateY(-1px); }
+    .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .stat-icon.blue { background: #EFF6FF; color: #2563EB; }
+    .stat-icon.amber { background: #FFFBEB; color: #D97706; }
+    .stat-icon.green { background: #ECFDF5; color: #059669; }
+    .stat-icon.red { background: #FEF2F2; color: #DC2626; }
+    .stat-title { font-size: 12px; color: #6B7280; }
+    .stat-value { font-size: 22px; font-weight: 800; margin-top: 2px; }
+    .stat-sub { font-size: 11px; color: #9CA3AF; }
+
+    /* Glass Card */
+    .glass-card { background: white; border: 1px solid #E5E7EB; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .card-header h3 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { text-align: right; padding: 10px 14px; background: #F9FAFB; font-weight: 600; color: #6B7280; border-bottom: 1px solid #E5E7EB; }
+    .data-table td { padding: 12px 14px; border-bottom: 1px solid #F3F4F6; }
+    .data-table tr:hover td { background: #F9FAFB; }
+    .badge-pill { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
+    .badge-green { background: #ECFDF5; color: #059669; }
+    .badge-amber { background: #FFFBEB; color: #D97706; }
+    .badge-blue { background: #EFF6FF; color: #2563EB; }
+    .badge-red { background: #FEF2F2; color: #DC2626; }
+    .badge-gray { background: #F3F4F6; color: #6B7280; }
+    .btn-sm { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; border: none; cursor: pointer; font-family: 'Vazirmatn', sans-serif; }
+    .btn-approve { background: #059669; color: white; }
+    .btn-reject { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+    .btn-unlock { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }
+    .btn-view { background: #EFF6FF; color: #2563EB; }
+
+    /* Page Tabs */
+    .page-tabs { display: none; }
+    .page-tabs.active { display: block; }
+
+    /* Approval Card */
+    .approval-card { background: white; border: 1px solid #E5E7EB; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+    .approval-header { display: flex; justify-content: space-between; align-items: center; }
+    .approval-driver { font-weight: 700; font-size: 14px; }
+    .approval-date { font-size: 12px; color: #6B7280; }
+    .approval-amount { font-size: 18px; font-weight: 800; color: #059669; }
+    .approval-count { font-size: 12px; color: #6B7280; }
+    .approval-actions { display: flex; gap: 6px; margin-top: 10px; }
+    .approval-detail { background: #F9FAFB; border-radius: 10px; padding: 10px; margin-top: 10px; display: none; }
+    .approval-detail.show { display: block; }
+    .trip-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #E5E7EB; font-size: 12px; }
+    .trip-row:last-child { border: none; }
+
+    /* Quick Actions */
+    .quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .quick-btn { display: flex; align-items: center; gap: 8px; padding: 12px; background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 12px; font-size: 12px; font-weight: 600; color: #374151; cursor: pointer; transition: all 0.15s; }
+    .quick-btn:hover { background: #EFF6FF; border-color: #BFDBFE; }
+    .quick-btn i { font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════ LOGIN ═══════════ -->
+  <div class="login-page" id="loginPage">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-badge"><i class="fa-solid fa-shield-halved"></i></div>
+        <h1>پنل مدیریت ناوگان</h1>
+        <p>هلدینگ آرمان انتخاب</p>
+      </div>
+      <div class="lf">
+        <label>نام کاربری</label>
+        <input type="text" id="adminUser" value="admin" placeholder="نام کاربری">
+      </div>
+      <div class="lf">
+        <label>رمز عبور</label>
+        <input type="password" id="adminPass" value="admin123" placeholder="رمز عبور">
+      </div>
+      <button class="login-btn" onclick="adminLogin()"><i class="fa-solid fa-right-to-bracket"></i> ورود به پنل مدیریت</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ ADMIN LAYOUT ═══════════ -->
+  <div class="admin-layout" id="adminLayout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="badge"><i class="fa-solid fa-shield-halved"></i></div>
+        <div>
+          <h2>هلدینگ آرمان انتخاب</h2>
+          <p>سامانه مدیریت ناوگان</p>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-link active" onclick="switchPage('dashboard')"><i class="fa-solid fa-chart-pie"></i> داشبورد</div>
+        <div class="nav-link" onclick="switchPage('drivers')"><i class="fa-solid fa-users"></i> رانندگان</div>
+        <div class="nav-link" onclick="switchPage('routes')"><i class="fa-solid fa-route"></i> مسیرها و نرخ‌ها</div>
+        <div class="nav-link" onclick="switchPage('trips')"><i class="fa-solid fa-car"></i> سفرها</div>
+        <div class="nav-link" onclick="switchPage('dailywork')"><i class="fa-solid fa-clipboard-check"></i> تأیید کارکرد</div>
+        <div class="nav-link" onclick="switchPage('finance')"><i class="fa-solid fa-wallet"></i> گزارش مالی</div>
+        <div class="nav-link" onclick="switchPage('audit')"><i class="fa-solid fa-file-alt"></i> لاگ حسابرسی</div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="avatar">A</div>
+          <div><div class="name">مدیر سیستم</div><div class="role">Admin</div></div>
+        </div>
+        <button class="logout-btn" onclick="adminLogout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- ═══ DASHBOARD ═══ -->
+      <div class="page-tabs active" id="page-dashboard">
+        <div class="page-header">
+          <h1>داشبورد مدیریت</h1>
+          <p>نمای کلی از وضعیت ناوگان و عملیات روزانه</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card" onclick="switchPage('drivers')">
+            <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
+            <div>
+              <div class="stat-title">رانندگان فعال</div>
+              <div class="stat-value">۴</div>
+              <div class="stat-sub">از ۵ راننده</div>
+            </div>
+          </div>
+          <div class="stat-card" onclick="switchPage('routes')">
+            <div class="stat-icon amber"><i class="fa-solid fa-route"></i></div>
+            <div>
+              <div class="stat-title">مسیرهای تعریف‌شده</div>
+              <div class="stat-value">۲۰۳</div>
+              <div class="stat-sub">مسیر فعال</div>
+            </div>
+          </div>
+          <div class="stat-card" onclick="switchPage('trips')">
+            <div class="stat-icon green"><i class="fa-solid fa-car"></i></div>
+            <div>
+              <div class="stat-title">سفرهای امروز</div>
+              <div class="stat-value">۳</div>
+              <div class="stat-sub">ثبت شده</div>
+            </div>
+          </div>
+          <div class="stat-card" onclick="switchPage('dailywork')">
+            <div class="stat-icon red"><i class="fa-solid fa-clock"></i></div>
+            <div>
+              <div class="stat-title">کارکردهای در انتظار</div>
+              <div class="stat-value">۱</div>
+              <div class="stat-sub">نیاز به بررسی</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px;">
+          <!-- Recent Trips -->
+          <div class="glass-card">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-car" style="color:#059669"></i> آخرین سفرهای ثبت‌شده</h3>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #F9FAFB; border-radius: 10px;">
+                <div><div style="font-weight:600;font-size:13px;">AR-01-01</div><div style="font-size:11px;color:#6B7280;">انبار ← شاهین شهر</div></div>
+                <div style="text-align:left;"><div style="font-weight:700;color:#059669;">۲,۷۰۰,۰۰۰ ت</div><div style="font-size:10px;color:#9CA3AF;">۰۷:۴۵</div></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #F9FAFB; border-radius: 10px;">
+                <div><div style="font-weight:600;font-size:13px;">AR-02-01</div><div style="font-size:11px;color:#6B7280;">انبار ← گلدیس</div></div>
+                <div style="text-align:left;"><div style="font-weight:700;color:#059669;">۳,۱۵۰,۰۰۰ ت</div><div style="font-size:10px;color:#9CA3AF;">۱۰:۳۰</div></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #F9FAFB; border-radius: 10px;">
+                <div><div style="font-weight:600;font-size:13px;">AR-12-05</div><div style="font-size:11px;color:#6B7280;">انبار ← نجف آباد</div></div>
+                <div style="text-align:left;"><div style="font-weight:700;color:#059669;">۷,۶۵۰,۰۰۰ ت</div><div style="font-size:10px;color:#9CA3AF;">۰۸:۰۰</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="glass-card">
+            <div class="card-header"><h3><i class="fa-solid fa-bolt" style="color:#D97706"></i> دسترسی‌های سریع</h3></div>
+            <div class="quick-grid">
+              <div class="quick-btn" onclick="switchPage('dailywork')"><i class="fa-solid fa-check-double" style="color:#059669"></i> تأیید کارکرد</div>
+              <div class="quick-btn" onclick="switchPage('finance')"><i class="fa-solid fa-wallet" style="color:#D97706"></i> گزارش مالی</div>
+              <div class="quick-btn" onclick="switchPage('routes')"><i class="fa-solid fa-route" style="color:#2563EB"></i> مدیریت مسیرها</div>
+              <div class="quick-btn" onclick="switchPage('audit')"><i class="fa-solid fa-file-alt" style="color:#DC2626"></i> لاگ حسابرسی</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ DAILY WORK ═══ -->
+      <div class="page-tabs" id="page-dailywork">
+        <div class="page-header">
+          <h1>تأیید کارکرد روزانه</h1>
+          <p>بررسی و تأیید/رد کارکرد روزانه رانندگان</p>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+          <button class="btn-sm badge-amber" style="padding:8px 16px;border-radius:10px;" id="filter-pending">⏳ در انتظار تأیید</button>
+          <button class="btn-sm badge-gray" style="padding:8px 16px;border-radius:10px;" onclick="alert('نمایش همه')">همه</button>
+          <button class="btn-sm badge-gray" style="padding:8px 16px;border-radius:10px;" onclick="alert('نمایش تأیید شده‌ها')">✅ تأیید شده</button>
+        </div>
+
+        <!-- Approval: Driver 1 (علی رضایی) - 3 trips pending -->
+        <div class="approval-card" id="approval-1">
+          <div class="approval-header">
+            <div>
+              <div class="approval-driver">علی رضایی <span style="font-size:11px;color:#6B7280;font-weight:400;">(D-101)</span></div>
+              <div class="approval-date">شنبه ۱ شهریور ۱۴۰۵</div>
+            </div>
+            <div style="text-align: left;">
+              <div class="approval-amount">۱۳,۵۰۰,۰۰۰ تومان</div>
+              <div class="approval-count">۳ سفر</div>
+            </div>
+          </div>
+          <span class="badge-pill badge-amber" style="margin-top: 8px;">⏳ در انتظار تأیید</span>
+
+          <div style="margin-top: 10px;">
+            <button class="btn-sm btn-view" onclick="toggleDetail('detail-1')"><i class="fa-solid fa-eye"></i> مشاهده جزئیات</button>
+          </div>
+
+          <div class="approval-detail" id="detail-1">
+            <div class="trip-row"><span>AR-01-01 | انبار ← شاهین شهر</span><span style="font-weight:700;color:#059669;">۲,۷۰۰,۰۰۰</span></div>
+            <div class="trip-row"><span>AR-02-01 | انبار ← گلدیس</span><span style="font-weight:700;color:#059669;">۳,۱۵۰,۰۰۰</span></div>
+            <div class="trip-row"><span>AR-12-05 | انبار ← نجف آباد</span><span style="font-weight:700;color:#059669;">۷,۶۵۰,۰۰۰</span></div>
+          </div>
+
+          <div class="approval-actions">
+            <button class="btn-sm btn-approve" onclick="approveWork(1)"><i class="fa-solid fa-check"></i> تأیید</button>
+            <button class="btn-sm btn-reject" onclick="rejectWork(1)"><i class="fa-solid fa-times"></i> رد</button>
+            <button class="btn-sm btn-unlock" onclick="unlockWork(1)"><i class="fa-solid fa-unlock"></i> بازگشایی</button>
+          </div>
+        </div>
+
+        <!-- Already approved -->
+        <div class="approval-card" style="opacity: 0.6;">
+          <div class="approval-header">
+            <div>
+              <div class="approval-driver">رضا محمدی <span style="font-size:11px;color:#6B7280;font-weight:400;">(D-102)</span></div>
+              <div class="approval-date">پنجشنبه ۳۰ مرداد ۱۴۰۵</div>
+            </div>
+            <div style="text-align: left;">
+              <div class="approval-amount">۹,۴۵۰,۰۰۰ تومان</div>
+              <div class="approval-count">۲ سفر</div>
+            </div>
+          </div>
+          <span class="badge-pill badge-green" style="margin-top: 8px;">✅ تأیید شده</span>
+        </div>
+      </div>
+
+      <!-- ═══ DRIVERS ═══ -->
+      <div class="page-tabs" id="page-drivers">
+        <div class="page-header"><h1>مدیریت رانندگان</h1><p>۵ راننده در سیستم</p></div>
+        <div class="glass-card">
+          <table class="data-table">
+            <thead><tr><th>کد</th><th>نام</th><th>کد پرسنلی</th><th>خودرو</th><th>تلفن</th><th>وضعیت</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:700;">D-101</td><td>علی رضایی</td><td>۹۴۸۱۲</td><td>پژو پارس سفید</td><td>۰۹۱۲۱۱۱۴۴۵۵</td><td><span class="badge-pill badge-green">● فعال</span></td></tr>
+              <tr><td style="font-weight:700;">D-102</td><td>رضا محمدی</td><td>۹۴۸۱۵</td><td>سمند سورن خاکستری</td><td>۰۹۱۳۲۲۲۳۳۴۴</td><td><span class="badge-pill badge-green">● فعال</span></td></tr>
+              <tr><td style="font-weight:700;">D-103</td><td>حسین کریمی</td><td>۹۴۸۳۳</td><td>تارا مشکی</td><td>۰۹۱۲۵۵۵۶۶۷۷</td><td><span class="badge-pill badge-green">● فعال</span></td></tr>
+              <tr><td style="font-weight:700;">D-104</td><td>محمد احمدی</td><td>۹۴۸۴۸</td><td>دنا پلاس سفید</td><td>۰۹۱۲۷۷۷۸۸۹۹</td><td><span class="badge-pill badge-green">● فعال</span></td></tr>
+              <tr><td style="font-weight:700;">D-105</td><td>مهدی کاظمی</td><td>۹۴۸۶۵</td><td>پژو ۲۰۷i خاکستری</td><td>۰۹۱۲۹۹۹۰۰۱۱</td><td><span class="badge-pill badge-red">● غیرفعال</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ ROUTES ═══ -->
+      <div class="page-tabs" id="page-routes">
+        <div class="page-header"><h1>مدیریت مسیرها و نرخ‌ها</h1><p>۲۰۳ مسیر فعال</p></div>
+        <div class="glass-card">
+          <table class="data-table">
+            <thead><tr><th>کد</th><th>مبدأ</th><th>مقصد</th><th>مسافت</th><th>نرخ (تومان)</th><th>وضعیت</th></tr></thead>
+            <tbody>
+              <tr><td style="font-family:monospace;font-weight:700;color:#2563EB;">AR-01-01</td><td>انبار مرکزی</td><td>شاهین شهر</td><td>۳۰ ک.م</td><td style="font-weight:700;color:#059669;">۲,۷۰۰,۰۰۰</td><td><span class="badge-pill badge-green">فعال</span></td></tr>
+              <tr><td style="font-family:monospace;font-weight:700;color:#2563EB;">AR-02-01</td><td>انبار مرکزی</td><td>گلدیس</td><td>۳۵ ک.م</td><td style="font-weight:700;color:#059669;">۳,۱۵۰,۰۰۰</td><td><span class="badge-pill badge-green">فعال</span></td></tr>
+              <tr><td style="font-family:monospace;font-weight:700;color:#2563EB;">AR-04-01</td><td>انبار مرکزی</td><td>۱۷ شهریور</td><td>۴۵ ک.م</td><td style="font-weight:700;color:#059669;">۴,۰۵۰,۰۰۰</td><td><span class="badge-pill badge-green">فعال</span></td></tr>
+              <tr><td style="font-family:monospace;font-weight:700;color:#2563EB;">AR-06-01</td><td>انبار مرکزی</td><td>۲۲ بهمن</td><td>۵۵ ک.م</td><td style="font-weight:700;color:#059669;">۴,۹۵۰,۰۰۰</td><td><span class="badge-pill badge-green">فعال</span></td></tr>
+              <tr><td style="font-family:monospace;font-weight:700;color:#2563EB;">AR-12-05</td><td>انبار مرکزی</td><td>نجف آباد</td><td>۸۵ ک.م</td><td style="font-weight:700;color:#059669;">۷,۶۵۰,۰۰۰</td><td><span class="badge-pill badge-green">فعال</span></td></tr>
+              <tr><td style="font-family:monospace;font-weight:700;color:#2563EB;">AR-15-01</td><td>انبار مرکزی</td><td>چادگان</td><td>۱۰۰ ک.م</td><td style="font-weight:700;color:#059669;">۹,۰۰۰,۰۰۰</td><td><span class="badge-pill badge-green">فعال</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ TRIPS ═══ -->
+      <div class="page-tabs" id="page-trips">
+        <div class="page-header"><h1>لیست سفرها</h1><p>۳ سفر ثبت‌شده | جمع: ۱۳,۵۰۰,۰۰۰ تومان</p></div>
+        <div class="glass-card">
+          <table class="data-table">
+            <thead><tr><th>کد سفر</th><th>تاریخ</th><th>مسیر</th><th>کد مسیر</th><th>ساعت</th><th>مبلغ</th></tr></thead>
+            <tbody>
+              <tr><td style="font-family:monospace;font-size:11px;">TRP-14050601-101</td><td>۱ شهریور</td><td>انبار ← شاهین شهر</td><td style="font-weight:700;color:#2563EB;">AR-01-01</td><td>۰۷:۴۵</td><td style="font-weight:700;color:#059669;">۲,۷۰۰,۰۰۰</td></tr>
+              <tr><td style="font-family:monospace;font-size:11px;">TRP-14050601-102</td><td>۱ شهریور</td><td>انبار ← گلدیس</td><td style="font-weight:700;color:#2563EB;">AR-02-01</td><td>۱۰:۳۰</td><td style="font-weight:700;color:#059669;">۳,۱۵۰,۰۰۰</td></tr>
+              <tr><td style="font-family:monospace;font-size:11px;">TRP-14050601-103</td><td>۱ شهریور</td><td>انبار ← نجف آباد</td><td style="font-weight:700;color:#2563EB;">AR-12-05</td><td>۰۸:۰۰</td><td style="font-weight:700;color:#059669;">۷,۶۵۰,۰۰۰</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ FINANCE ═══ -->
+      <div class="page-tabs" id="page-finance">
+        <div class="page-header"><h1>گزارش مالی و تسویه‌حساب</h1><p>دوره مالی شهریور ۱۴۰۵</p></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px;">
+          <div class="glass-card" style="text-align:center;"><p style="font-size:12px;color:#6B7280;">مجموع تأیید شده</p><p style="font-size:20px;font-weight:800;color:#059669;margin-top:4px;">۲۲,۹۵۰,۰۰۰ ت</p></div>
+          <div class="glass-card" style="text-align:center;"><p style="font-size:12px;color:#6B7280;">مجموع در انتظار</p><p style="font-size:20px;font-weight:800;color:#D97706;margin-top:4px;">۱۳,۵۰۰,۰۰۰ ت</p></div>
+          <div class="glass-card" style="text-align:center;"><p style="font-size:12px;color:#6B7280;">تعداد رانندگان</p><p style="font-size:20px;font-weight:800;color:#2563EB;margin-top:4px;">۴ نفر</p></div>
+        </div>
+        <div class="glass-card">
+          <table class="data-table">
+            <thead><tr><th>راننده</th><th>کد</th><th>پرسنلی</th><th>روز کاری</th><th>تعداد سفر</th><th>مبلغ تأیید شده</th><th>در انتظار</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:600;">علی رضایی</td><td>D-101</td><td>۹۴۸۱۲</td><td>۱ روز</td><td>۳ سفر</td><td style="font-weight:700;color:#059669;">—</td><td style="font-weight:700;color:#D97706;">۱۳,۵۰۰,۰۰۰</td></tr>
+              <tr><td style="font-weight:600;">رضا محمدی</td><td>D-102</td><td>۹۴۸۱۵</td><td>۱ روز</td><td>۲ سفر</td><td style="font-weight:700;color:#059669;">۹,۴۵۰,۰۰۰</td><td>—</td></tr>
+              <tr><td style="font-weight:600;">حسین کریمی</td><td>D-103</td><td>۹۴۸۳۳</td><td>۱ روز</td><td>۲ سفر</td><td style="font-weight:700;color:#059669;">۱۳,۵۰۰,۰۰۰</td><td>—</td></tr>
+              <tr><td style="font-weight:600;">محمد احمدی</td><td>D-104</td><td>۹۴۸۴۸</td><td>۰</td><td>۰</td><td>—</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ═══ AUDIT ═══ -->
+      <div class="page-tabs" id="page-audit">
+        <div class="page-header"><h1>لاگ حسابرسی</h1><p>تمام عملیات حساس سیستم</p></div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:white;border:1px solid #E5E7EB;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;">
+            <span class="badge-pill badge-amber" style="min-width:80px;justify-content:center;">ارسال کارکرد</span>
+            <div style="flex:1;"><div style="font-weight:600;font-size:13px;">کارکرد روز ۱ شهریور ۱۴۰۵</div><div style="font-size:11px;color:#6B7280;">علی رضایی | ۳ سفر به ارزش ۱۳,۵۰۰,۰۰۰ تومان</div></div>
+            <div style="text-align:left;font-size:11px;color:#9CA3AF;">۱ شهریور ۱۴۰۵ - ساعت ۱۵:۳۰</div>
+          </div>
+          <div style="background:white;border:1px solid #E5E7EB;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;">
+            <span class="badge-pill badge-green" style="min-width:80px;justify-content:center;">ثبت سفر</span>
+            <div style="flex:1;"><div style="font-weight:600;font-size:13px;">TRP-14050601-103</div><div style="font-size:11px;color:#6B7280;">انبار ← نجف آباد (AR-12-05) | ۷,۶۵۰,۰۰۰ تومان</div></div>
+            <div style="text-align:left;font-size:11px;color:#9CA3AF;">۱ شهریور ۱۴۰۵ - ساعت ۰۸:۰۰</div>
+          </div>
+          <div style="background:white;border:1px solid #E5E7EB;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;">
+            <span class="badge-pill badge-blue" style="min-width:80px;justify-content:center;">ورود</span>
+            <div style="flex:1;"><div style="font-weight:600;font-size:13px;">ورود موفق مدیر سیستم</div><div style="font-size:11px;color:#6B7280;">admin | نقش: ADMIN</div></div>
+            <div style="text-align:left;font-size:11px;color:#9CA3AF;">۱ شهریور ۱۴۰۵ - ساعت ۰۸:۰۰</div>
+          </div>
+          <div style="background:white;border:1px solid #E5E7EB;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;">
+            <span class="badge-pill badge-gray" style="min-width:80px;justify-content:center;">راه‌اندازی</span>
+            <div style="flex:1;"><div style="font-weight:600;font-size:13px;">راه‌اندازی سیستم</div><div style="font-size:11px;color:#6B7280;">ایجاد پایگاه داده مسیرها و نرخ‌های هلدینگ آرمان انتخاب</div></div>
+            <div style="text-align:left;font-size:11px;color:#9CA3AF;">۱ شهریور ۱۴۰۵ - ساعت ۰۸:۰۰</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    function adminLogin() {
+      const u = document.getElementById('adminUser').value;
+      const p = document.getElementById('adminPass').value;
+      if (u === 'admin' && p === 'admin123') {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('adminLayout').classList.add('active');
+      } else {
+        alert('نام کاربری یا رمز عبور اشتباه است');
+      }
+    }
+
+    function adminLogout() {
+      document.getElementById('adminLayout').classList.remove('active');
+      document.getElementById('loginPage').style.display = 'flex';
+    }
+
+    function switchPage(page) {
+      document.querySelectorAll('.page-tabs').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+      document.getElementById('page-' + page).classList.add('active');
+      event.target.closest('.nav-link')?.classList.add('active');
+    }
+
+    function toggleDetail(id) {
+      document.getElementById(id).classList.toggle('show');
+    }
+
+    function approveWork(n) {
+      const card = document.getElementById('approval-' + n);
+      card.querySelector('.badge-pill').className = 'badge-pill badge-green';
+      card.querySelector('.badge-pill').innerHTML = '✅ تأیید شده';
+      card.querySelector('.approval-actions').innerHTML = '<span style="color:#059669;font-size:12px;font-weight:600;">✅ با موفقیت تأیید شد</span>';
+      card.style.opacity = '0.6';
+    }
+
+    function rejectWork(n) {
+      const reason = prompt('دلیل رد کارکرد:');
+      if (reason) {
+        const card = document.getElementById('approval-' + n);
+        card.querySelector('.badge-pill').className = 'badge-pill badge-red';
+        card.querySelector('.badge-pill').innerHTML = '❌ رد شده';
+        card.querySelector('.approval-actions').innerHTML = '<span style="color:#DC2626;font-size:12px;">دلیل: ' + reason + '</span>';
+      }
+    }
+
+    function unlockWork(n) {
+      alert('کارکرد بازگشایی شد و راننده می‌تواند ویرایش کند.');
+    }
+
+    document.getElementById('adminPass').addEventListener('keypress', e => { if (e.key === 'Enter') adminLogin(); });
+  </script>
+</body>
+</html>
