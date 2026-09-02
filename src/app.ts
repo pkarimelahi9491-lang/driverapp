@@ -17,12 +17,12 @@ import rosterRoutes from './modules/roster/roster.routes';
 
 const app = express();
 
-// ── Global Middleware ────────────────────────────────────────────────
+// Global Middleware
 app.use(cors({ origin: config.corsOrigin, credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ── Request Logging (development) ───────────────────────────────────
+// Request Logging
 if (config.nodeEnv === 'development') {
   app.use((req, _res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
@@ -30,9 +30,9 @@ if (config.nodeEnv === 'development') {
   });
 }
 
-// ── Health Check ────────────────────────────────────────────────────
+// Health Check
 app.get('/api/health', (_req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: 'Arman Entekhab Fleet API is running',
     timestamp: new Date().toISOString(),
@@ -40,7 +40,7 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// ── API Routes ──────────────────────────────────────────────────────
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/drivers', driverRoutes);
 app.use('/api/locations', locationRoutes);
@@ -51,23 +51,41 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/roster', rosterRoutes);
 
-// ── Serve Driver App ────────────────────────────────────────────
-app.use('/driver', express.static(path.join(__dirname, '../../driver-app')));
-app.use('/admin', express.static(path.join(__dirname, '../../web-admin-react/dist')));
-
-// ── 404 Handler ─────────────────────────────────────────────────────
-app.use((_req, res) => {
-  res.status(404).json({
-    success: false,
-    error: { message: 'مسیر مورد نظر یافت نشد', statusCode: 404 },
+// Root Route
+app.get('/', (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Arman Entekhab Fleet API is running',
   });
 });
 
-// ── Global Error Handler ────────────────────────────────────────────
+// Static Applications
+app.use(
+  '/driver',
+  express.static(path.join(__dirname, '../../driver-app'))
+);
+
+app.use(
+  '/admin',
+  express.static(path.join(__dirname, '../../web-admin-react/dist'))
+);
+
+// 404 Handler
+app.use((_req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      message: 'مسیر مورد نظر یافت نشد',
+      statusCode: 404,
+    },
+  });
+});
+
+// Global Error Handler
 app.use(errorHandler);
 
-// ── Start Server ────────────────────────────────────────────────────
-app.listen(config.port, () => {
+// Start Server
+app.listen(config.port, '0.0.0.0', () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════╗
 ║   Arman Entekhab Fleet Management API                    ║
