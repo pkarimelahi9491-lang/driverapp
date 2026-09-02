@@ -1,20 +1,18 @@
-// تبدیل تاریخ میلادی به تاریخ شمسی با استفاده از موتور استاندارد Intl بدون نیاز به پکیج اضافی
-export const toPersianDate = (date: Date | string | number): string => {
-  if (!date) return '';
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat('fa-IR', {
+export function getJalaliDate(date: Date = new Date()): string {
+  const formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(d);
-};
+  });
+  return formatter.format(date);
+}
 
-export const toPersianDateTime = (date: Date | string | number): string => {
-  if (!date) return '';
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat('fa-IR', {
+export function todayJalaliString(): string {
+  return getJalaliDate(new Date());
+}
+
+export function getJalaliDateTimeString(date: Date = new Date()): string {
+  const formatter = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -22,15 +20,12 @@ export const toPersianDateTime = (date: Date | string | number): string => {
     minute: '2-digit',
     second: '2-digit',
     hour12: false,
-  }).format(d);
-};
-
-export const formatPersianDate = toPersianDate;
-export const formatPersianDateTime = toPersianDateTime;
+  });
+  return formatter.format(date);
+}
 
 export default {
-  toPersianDate,
-  toPersianDateTime,
-  formatPersianDate,
-  formatPersianDateTime,
+  getJalaliDate,
+  todayJalaliString,
+  getJalaliDateTimeString,
 };
