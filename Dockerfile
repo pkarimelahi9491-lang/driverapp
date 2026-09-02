@@ -2,21 +2,23 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# نصب OpenSSL موردنیاز Prisma
+# نصب وابستگی‌های لازم برای Prisma
 RUN apk add --no-cache openssl libc6-compat
 
 # کپی فایل‌های پکیج
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# نصب وابستگی‌ها
+# نصب همه وابستگی‌ها
 RUN npm install
 
-# تولید کلاینت Prisma
+# تولید Prisma Client
 RUN npx prisma generate
 
-# کپی سورس کد و بیلد
+# کپی سورس پروژه
 COPY . .
+
+# ساخت پروژه
 RUN npm run build
 
 
@@ -29,14 +31,21 @@ ENV NODE_ENV=production
 # نصب OpenSSL در کانتینر نهایی
 RUN apk add --no-cache openssl libc6-compat
 
+# کپی فایل‌های پکیج و Prisma
 COPY package*.json ./
 COPY prisma ./prisma/
 
 # نصب وابستگی‌های production
 RUN npm install --omit=dev
 
-# تولید کلاینت Prisma
+# تولید Prisma Client
 RUN npx prisma generate
 
 # کپی خروجی build
-COPY --from=builder /app/dist 
+COPY --from=builder /app/dist ./dist
+
+# پورت برنامه
+EXPOSE 3000
+
+# اجرای برنامه
+CMD ["node", "dist/index.js"]
