@@ -1,5 +1,5 @@
 /**
- * تبدیل تاریخ میلادی به شمسی و بالعکس
+ * توابع تبدیل تاریخ شمسی و میلادی
  */
 
 export function gregorianToJalali(gy_val: number, gm_val: number, gd_val: number): [number, number, number] {
@@ -24,6 +24,20 @@ export function toJalali(date: Date | string | number): string {
   if (isNaN(d.getTime())) return '';
   const [jy, jm, jd] = gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
   return `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`;
+}
+
+export function todayJalaliString(): string {
+  return toJalali(new Date());
+}
+
+export function getJalaliDateTimeString(date: Date | string | number = new Date()): string {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  const jalaliDate = toJalali(d);
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  return `${jalaliDate} ${hours}:${minutes}:${seconds}`;
 }
 
 export function toPersianDigits(n: number | string): string {
