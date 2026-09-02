@@ -36,7 +36,10 @@ function jalaliToGregorian(jy: number, jm: number, jd: number): [number, number,
   let jd1 = jd - 1;
   let days = 365 * jy1 + div(jy1, 33) * 8 + div(jy1 < 33 ? jy1 + 1 : jy1 - 29, 4);
   days += [0, 31, 62, 93, 124, 155, 186, 216, 246, 276, 306, 336][jm1] + jd1;
-  const gy = 1600 + 400 * div(days, 146097);
+  
+  // تغییر در این خط: تبدیل const به let
+  let gy = 1600 + 400 * div(days, 146097);
+  
   days = mod(days, 146097);
   if (days > 36524) {
     days -= 1;
