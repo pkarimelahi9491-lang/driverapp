@@ -142,7 +142,7 @@ export function authorize(...allowedRoles: string[]) {
  * Generate legacy JWT token (for backward compatibility)
  */
 export function generateToken(payload: AuthPayload): string {
-  return jwt.sign(payload, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
+  return jwt.sign(payload, secret, { expiresIn: '7d' } as any)
 }
 
 /**
