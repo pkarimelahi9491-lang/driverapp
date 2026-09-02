@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
 import { config } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 
@@ -59,23 +58,23 @@ app.get('/', (_req, res) => {
   });
 });
 
-// ── Static Applications (Admin & Driver App) ────────────────────────
-const adminDistPath = path.join(process.cwd(), 'web-admin-react/dist');
-const driverDistPath = path.join(process.cwd(), 'driver-app');
-
-// Admin Panel (SPA static files & fallback)
-app.use('/admin', express.static(adminDistPath));
-app.get('/admin/*', (_req, res) => {
-  res.sendFile(path.join(adminDistPath, 'index.html'));
+// Admin Route info
+app.get('/admin', (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Admin Dashboard API endpoint is active',
+  });
 });
 
-// Driver App (SPA static files & fallback)
-app.use('/driver', express.static(driverDistPath));
-app.get('/driver/*', (_req, res) => {
-  res.sendFile(path.join(driverDistPath, 'index.html'));
+// Driver Route info
+app.get('/driver', (_req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Driver App API endpoint is active',
+  });
 });
 
-// 404 Handler (باید حتماً بعد از تمام روت‌ها و استاتیک‌ها باشد)
+// 404 Handler
 app.use((_req, res) => {
   res.status(404).json({
     success: false,
