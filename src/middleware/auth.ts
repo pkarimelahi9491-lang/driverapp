@@ -17,7 +17,6 @@ export interface AuthRequest extends Request {
 
 /**
  * Middleware احراز هویت و بررسی نقش‌ها
- * قابل فراخوانی به صورت authenticate() یا authenticate('ADMIN') یا authenticate(['ADMIN', 'DISPATCHER'])
  */
 export const authenticate = (roles?: string | string[] | any, ...extraRoles: any[]) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -41,7 +40,7 @@ export const authenticate = (roles?: string | string[] | any, ...extraRoles: any
 
       req.user = decoded;
 
-      // بررسی نقش‌ها (در صورتی که نقشی مشخص شده باشد)
+      // بررسی نقش‌ها
       if (roles) {
         let allowedRoles: string[] = [];
         if (typeof roles === 'string') {
@@ -72,12 +71,22 @@ export const generateToken = (payload: object, expiresIn: string | number = '7d'
 };
 
 /**
- * شبیه‌سازی یا ایجاد کاربر در Supabase
+ * ایجاد یا شبیه‌سازی کاربر در Supabase با پشتیبانی از چند آرگومان
  */
-export const createSupabaseUser = async (userData: any): Promise<any> => {
+export const createSupabaseUser = async (arg1?: any, arg2?: any, arg3?: any, ...rest: any[]): Promise<any> => {
+  if (typeof arg1 === 'object' && arg1 !== null) {
+    return {
+      id: arg1.id || 'generated-user-id',
+      ...arg1,
+      createdAt: new Date().toISOString()
+    };
+  }
+
   return {
-    id: userData.id || 'generated-user-id',
-    ...userData,
+    id: 'generated-user-id',
+    email: arg1,
+    password: arg2,
+    metadata: arg3,
     createdAt: new Date().toISOString()
   };
 };
