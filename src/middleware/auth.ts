@@ -2,6 +2,15 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
 
+// اضافه کردن فیلد user به Request پیش‌فرض Express برای حل خطای Property user does not exist
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+    }
+  }
+}
+
 const JWT_SECRET = process.env.JWT_SECRET || 'your-default-jwt-secret';
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -24,7 +33,8 @@ export interface AuthRequest extends Request {
   user?: any;
 }
 
-export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction) => {
+// میدلور احراز هویت (هم با نام authenticate و هم authenticateToken)
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
@@ -41,14 +51,19 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
   });
 };
 
-export const requireRole = (roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticateToken = authenticate;
+
+// میدلور دسترسی نقش‌ها (هم با نام authorize و هم requireRole)
+export const authorize = (roles: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ error: 'Permission denied' });
     }
     next();
   };
 };
+
+export const requireRole = authorize;
 
 export async function createSupabaseUser(
   email: string,
