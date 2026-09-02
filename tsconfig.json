@@ -1,23 +1,27 @@
-{
+import json
+cfg = {
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
     "lib": ["ES2020"],
     "outDir": "./dist",
     "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    "strict": True,
+    "esModuleInterop": True,
+    "skipLibCheck": True,
+    "forceConsistentCasingInFileNames": True,
+    "resolveJsonModule": True,
+    "declaration": True,
+    "declarationMap": True,
+    "sourceMap": True,
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "paths": {"@/*": ["src/*"]}
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "prisma"]
 }
+with open("/mnt/data/tsconfig.json","w") as f:
+    json.dump(cfg, f, indent=2)
+with open("/mnt/data/tsconfig.json") as f:
+    print(json.load(f))
+print("OK")
