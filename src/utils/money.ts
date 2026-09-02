@@ -1,22 +1,36 @@
 /**
- * Money formatting utilities
- * All monetary values in the system are stored as BigInt (tomans)
+ * توابع کمکی محاسبات مالی و تبدیل ارقام و مقادیر BigInt
  */
 
-export function formatToman(amount: bigint | number): string {
-  const num = typeof amount === 'bigint' ? Number(amount) : amount;
-  return num.toLocaleString('fa-IR');
+export function formatRial(amount: bigint | number | string | null | undefined): string {
+  if (amount === null || amount === undefined) return '۰ ریال';
+  const val = typeof amount === 'bigint' ? amount.toString() : String(amount);
+  const formatted = val.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${formatted} ریال`;
 }
 
-export function tomanToDisplay(amount: bigint | number): string {
-  return `${formatToman(amount)} تومان`;
+export function toToman(rialAmount: bigint | number): number {
+  const val = typeof rialAmount === 'bigint' ? Number(rialAmount) : rialAmount;
+  return Math.floor(val / 10);
 }
 
-export function parseTomanInput(input: string): bigint {
-  const cleaned = input.replace(/[,،\s]/g, '');
-  return BigInt(cleaned || '0');
+export function sumAmounts(amounts: (bigint | number | string)[]): bigint {
+  return amounts.reduce<bigint>((total, current) => {
+    try {
+      const val = typeof current === 'bigint' ? current : BigInt(Math.trunc(Number(current) || 0));
+      return total + val;
+    } catch {
+      return total;
+    }
+  }, BigInt(0));
 }
 
-export function sumToman(values: (bigint | number)[]): bigint {
-  return values.reduce<bigint>((acc, val) => acc + BigInt(val), 0n);
+export function safeBigInt(val: any): bigint {
+  if (typeof val === 'bigint') return val;
+  if (!val) return BigInt(0);
+  try {
+    return BigInt(Math.trunc(Number(val)));
+  } catch {
+    return BigInt(0);
+  }
 }
