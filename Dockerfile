@@ -18,7 +18,7 @@ RUN npx prisma generate
 # کپی سورس پروژه
 COPY . .
 
-# ساخت پروژه
+# ساخت پروژه بک‌اند
 RUN npm run build
 
 
@@ -41,8 +41,12 @@ RUN npm install --omit=dev
 # تولید Prisma Client
 RUN npx prisma generate
 
-# کپی خروجی build
+# کپی خروجی build بک‌اند
 COPY --from=builder /app/dist ./dist
+
+# کپی پوشه‌های برنامه‌های استاتیک
+COPY --from=builder /app/web-admin-react ./web-admin-react
+COPY --from=builder /app/driver-app ./driver-app
 
 # پورت برنامه
 EXPOSE 3000
