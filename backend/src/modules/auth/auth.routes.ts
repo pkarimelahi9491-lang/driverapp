@@ -1,4 +1,3 @@
-```ts
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
