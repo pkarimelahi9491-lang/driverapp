@@ -28,7 +28,6 @@ router.post(
       );
     }
 
-    // Find user in database
     const user = await prisma.user.findUnique({
       where: { username },
     });
@@ -39,14 +38,12 @@ router.post(
       );
     }
 
-    // Check active status
     if (!user.isActive) {
       throw AppError.forbidden(
         'حساب کاربری شما غیرفعال شده است'
       );
     }
 
-    // Compare entered password with bcrypt hash
     const isPasswordValid = await bcrypt.compare(
       password,
       user.passwordHash
@@ -58,14 +55,12 @@ router.post(
       );
     }
 
-    // Generate application JWT
     const token = generateToken({
       userId: user.id,
       username: user.username,
       role: user.role,
     });
 
-    // Save login audit
     await prisma.auditLog.create({
       data: {
         userId: user.id,
@@ -73,7 +68,11 @@ router.post(
         operatorRole: user.role,
         action: 'LOGIN',
         entityTitle: 'ورود به سیستم',
-        details: `ورود موفق کاربر ${user.username} با نقش ${user.role}`,
+        details:
+          'ورود موفق کاربر ' +
+          user.username +
+          ' با نقش ' +
+          user.role,
         jalaliTimestamp: getJalaliDateTimeString(),
       },
     });
@@ -120,13 +119,16 @@ router.post(
       );
     }
 
-    const validRoles = ['DRIVER', 'ADMIN', 'FINANCE'];
+    const validRoles = [
+      'DRIVER',
+      'ADMIN',
+      'FINANCE',
+    ];
 
     const userRole = validRoles.includes(role)
       ? role
       : 'DRIVER';
 
-    // Check duplicate username
     const existingUser = await prisma.user.findUnique({
       where: { username },
     });
@@ -137,36 +139,35 @@ router.post(
       );
     }
 
-    // Create bcrypt password hash
     const passwordHash = await bcrypt.hash(
       password,
       12
     );
 
-    // Create Supabase Auth user if configured
     let supabaseUserId: string | null = null;
 
     if (
       config.supabaseUrl &&
       config.supabaseServiceRoleKey
     ) {
-      const email = `${username}@arman-fleet.local`;
+      const email =
+        username + '@arman-fleet.local';
 
-      const supabaseUser = await createSupabaseUser(
-        email,
-        password,
-        {
-          username,
-          role: userRole,
-        }
-      );
+      const supabaseUser =
+        await createSupabaseUser(
+          email,
+          password,
+          {
+            username,
+            role: userRole,
+          }
+        );
 
       if (supabaseUser) {
         supabaseUserId = supabaseUser.id;
       }
     }
 
-    // Create user in PostgreSQL
     const user = await prisma.user.create({
       data: {
         id: supabaseUserId || undefined,
@@ -176,20 +177,26 @@ router.post(
       },
     });
 
-    // Audit log
+    const auditDetails =
+      'ایجاد کاربر ' +
+      username +
+      ' با نقش ' +
+      userRole +
+      (supabaseUserId
+        ? ' (Supabase Auth)'
+        : '');
+
     await prisma.auditLog.create({
       data: {
         userId: req.user.userId,
         operatorName: req.user.username,
         operatorRole: req.user.role,
         action: 'CREATE_USER',
-        entityTitle: `کاربر جدید: ${username}`,
-        details: `ایجاد کاربر ${username} با نقش ${userRole}${
-          supabaseUserId
-            ? ' (Supabase Auth)'
-            : ''
-        }`,
-        jalaliTimestamp: getJalaliDateTimeString(),
+        entityTitle:
+          'کاربر جدید: ' + username,
+        details: auditDetails,
+        jalaliTimestamp:
+          getJalaliDateTimeString(),
       },
     });
 
@@ -233,12 +240,18 @@ router.get(
         driver: user.driver
           ? {
               id: user.driver.id,
-              fullName: user.driver.fullName,
-              driverCode: user.driver.driverCode,
-              personnelCode: user.driver.personnelCode,
-              phoneNumber: user.driver.phoneNumber,
-              carModel: user.driver.carModel,
-              carPlate: user.driver.carPlate,
+              fullName:
+                user.driver.fullName,
+              driverCode:
+                user.driver.driverCode,
+              personnelCode:
+                user.driver.personnelCode,
+              phoneNumber:
+                user.driver.phoneNumber,
+              carModel:
+                user.driver.carModel,
+              carPlate:
+                user.driver.carPlate,
             }
           : null,
       },
@@ -247,4 +260,3 @@ router.get(
 );
 
 export default router;
-```
