@@ -1,0 +1,32 @@
+{
+  "name": "arman-fleet-driver-app",
+  "version": "1.0.0",
+  "description": "اپ رانندگان هلدینگ آرمان انتخاب",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build-win": "electron-builder --win --x64",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.arman-fleet.driver",
+    "productName": "اپ رانندگان آرمان انتخاب",
+    "directories": { "output": "release" },
+    "files": ["index.html", "main.js", "icon.png"],
+    "win": {
+      "target": "nsis",
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": ["1065"],
+      "language": "1065",
+      "shortcutName": "اپ رانندگان آرمان انتخاب"
+    }
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.0"
+  }
+}

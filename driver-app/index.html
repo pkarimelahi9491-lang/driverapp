@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>اپ رانندگان — آرمان انتخاب</title>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33/Vazirmatn-font-face.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Vazirmatn', system-ui, sans-serif; direction: rtl; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%); min-height: 100vh; color: #1e293b; }
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    /* ─── Login ─── */
+    .login-screen { justify-content: center; align-items: center; padding: 20px; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%); }
+    .login-card { background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15); border-radius: 24px; padding: 40px 30px; width: 100%; max-width: 380px; box-shadow: 0 25px 50px rgba(0,0,0,0.3); }
+    .login-logo { width: 80px; height: 80px; border-radius: 20px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+    .login-title { color: white; font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+    .login-sub { color: rgba(255,255,255,0.6); font-size: 13px; text-align: center; margin-bottom: 30px; }
+    .input-group { position: relative; margin-bottom: 16px; }
+    .input-group label { display: block; color: rgba(255,255,255,0.7); font-size: 12px; margin-bottom: 6px; }
+    .input-group input { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; font-size: 15px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+    .input-group input:focus { border-color: #3b82f6; }
+    .input-group input::placeholder { color: rgba(255,255,255,0.3); }
+    .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(59,130,246,0.4); }
+    .btn-primary:active { transform: translateY(0); }
+    .login-error { color: #f87171; font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+    .shake { animation: shake 0.3s ease-out; }
+
+    /* ─── Main App ─── */
+    .app-screen { background: #f0f4f8; }
+    .app-header { background: linear-gradient(135deg, #1e40af, #1e3a8a); color: white; padding: 16px 20px; }
+    .header-top { display: flex; align-items: center; justify-content: space-between; }
+    .driver-info { display: flex; align-items: center; gap: 12px; }
+    .driver-avatar { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; }
+    .driver-name { font-size: 16px; font-weight: 600; }
+    .driver-code { font-size: 12px; color: rgba(255,255,255,0.7); }
+    .header-date { font-size: 13px; color: rgba(255,255,255,0.8); text-align: left; }
+    .logout-btn { background: rgba(255,255,255,0.15); border: none; color: white; padding: 8px 12px; border-radius: 10px; font-family: inherit; cursor: pointer; font-size: 12px; }
+
+    /* ─── Stats Row ─── */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 16px 20px; margin-top: -8px; }
+    .stat-box { background: white; border-radius: 14px; padding: 14px 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .stat-value { font-size: 22px; font-weight: 800; color: #1e40af; }
+    .stat-label { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+    /* ─── Content ─── */
+    .content { flex: 1; padding: 0 20px 100px; overflow-y: auto; }
+    .section-title { font-size: 15px; font-weight: 700; color: #334155; margin: 16px 0 10px; }
+
+    /* ─── Trip Card ─── */
+    .trip-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-right: 4px solid #3b82f6; }
+    .trip-route { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+    .trip-meta { display: flex; justify-content: space-between; align-items: center; }
+    .trip-code { font-size: 12px; color: #64748b; font-family: monospace; }
+    .trip-price { font-size: 15px; font-weight: 700; color: #059669; }
+    .trip-time { font-size: 11px; color: #94a3b8; }
+    .trip-status { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+    .trip-status.finalized { background: #dcfce7; color: #166534; }
+    .trip-status.pending { background: #fef3c7; color: #92400e; }
+
+    /* ─── Status Banner ─── */
+    .status-banner { padding: 12px 20px; margin: 0 20px 12px; border-radius: 12px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+    .status-banner.draft { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+    .status-banner.pending { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .status-banner.finalized { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+    /* ─── Bottom Nav ─── */
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e2e8f0; display: flex; padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom)); z-index: 100; }
+    .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px; border: none; background: none; color: #94a3b8; font-size: 10px; font-family: inherit; cursor: pointer; transition: color 0.2s; }
+    .nav-item.active { color: #1e40af; }
+    .nav-item svg { width: 22px; height: 22px; }
+    .nav-add { width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; display: flex; align-items: center; justify-content: center; margin-top: -20px; box-shadow: 0 4px 15px rgba(59,130,246,0.4); border: 3px solid white; }
+    .nav-add svg { width: 24px; height: 24px; }
+
+    /* ─── Register Trip Screen ─── */
+    .register-screen { background: #f0f4f8; }
+    .register-header { background: linear-gradient(135deg, #1e40af, #1e3a8a); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+    .back-btn { background: rgba(255,255,255,0.15); border: none; color: white; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .register-form { padding: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px; }
+    .form-group select, .form-group input { width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14px; font-family: inherit; background: white; outline: none; transition: border-color 0.2s; }
+    .form-group select:focus, .form-group input:focus { border-color: #3b82f6; }
+
+    /* ─── Route Result ─── */
+    .route-result { background: white; border-radius: 16px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 12px rgba(0,0,0,0.06); border: 2px solid #3b82f6; }
+    .route-result-header { font-size: 14px; color: #64748b; margin-bottom: 8px; }
+    .route-result-route { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 12px; }
+    .route-detail { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    .route-detail:last-child { border: none; }
+    .route-price { font-size: 24px; font-weight: 800; color: #059669; text-align: center; padding: 12px; background: #f0fdf4; border-radius: 12px; margin-top: 12px; }
+    .route-not-found { background: #fef2f2; border: 1px solid #fecaca; border-radius: 16px; padding: 20px; margin: 16px 0; text-align: center; color: #991b1b; font-size: 14px; }
+
+    .btn-confirm { width: 100%; padding: 16px; background: linear-gradient(135deg, #059669, #047857); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; margin-top: 16px; transition: all 0.2s; }
+    .btn-confirm:hover { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(5,150,105,0.4); }
+    .btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-finalize { width: 100%; padding: 16px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; font-family: inherit; cursor: pointer; margin-top: 16px; transition: all 0.2s; }
+    .btn-finalize:hover { box-shadow: 0 8px 25px rgba(124,58,237,0.4); }
+
+    .btn-danger { width: 100%; padding: 14px; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 12px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; margin-top: 8px; }
+
+    /* ─── Calendar ─── */
+    .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .calendar-nav { background: none; border: 1px solid #e2e8f0; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-day-name { text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; padding: 4px; }
+    .cal-day { text-align: center; padding: 8px 4px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+    .cal-day:hover { background: #eff6ff; }
+    .cal-day.today { background: #3b82f6; color: white; font-weight: 700; }
+    .cal-day.selected { background: #1e40af; color: white; }
+    .cal-day.has-trips { position: relative; }
+    .cal-day.has-trips::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; border-radius: 50%; background: #059669; }
+    .cal-day.has-trips.today::after, .cal-day.has-trips.selected::after { background: white; }
+    .cal-day.empty { visibility: hidden; }
+
+    /* ─── Finalize Summary ─── */
+    .summary-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 200; display: flex; align-items: flex-end; justify-content: center; }
+    .summary-sheet { background: white; border-radius: 24px 24px 0 0; width: 100%; max-width: 480px; padding: 24px 20px; max-height: 80vh; overflow-y: auto; animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .summary-title { font-size: 18px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+    .summary-date { font-size: 13px; color: #64748b; text-align: center; margin-bottom: 16px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+    .summary-total { display: flex; justify-content: space-between; padding: 14px; background: #f0fdf4; border-radius: 12px; margin-top: 12px; font-weight: 700; font-size: 16px; }
+
+    /* ─── Toast ─── */
+    .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; z-index: 300; animation: fadeIn 0.3s; }
+    .toast.success { background: #059669; }
+    .toast.error { background: #dc2626; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+    .empty-state { text-align: center; padding: 40px 20px; color: #94a3b8; }
+    .empty-state svg { margin: 0 auto 12px; opacity: 0.4; }
+    .empty-state p { font-size: 14px; }
+  </style>
+</head>
+<body>
+  <!-- ═══════════ LOGIN SCREEN ═══════════ -->
+  <div id="loginScreen" class="screen login-screen active">
+    <div class="login-card" id="loginCard">
+      <div class="login-logo">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <h1 class="login-title">ورود رانندگان</h1>
+      <p class="login-sub">هلدینگ آرمان انتخاب</p>
+      <div class="input-group">
+        <label>نام کاربری</label>
+        <input type="text" id="loginUsername" placeholder="کد راننده خود را وارد کنید" autocomplete="username" />
+      </div>
+      <div class="input-group">
+        <label>رمز عبور</label>
+        <input type="password" id="loginPassword" placeholder="رمز عبور" autocomplete="current-password" />
+      </div>
+      <button class="btn-primary" onclick="handleLogin()">ورود</button>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MAIN APP SCREEN ═══════════ -->
+  <div id="appScreen" class="screen app-screen">
+    <!-- Header -->
+    <div class="app-header">
+      <div class="header-top">
+        <div class="driver-info">
+          <div class="driver-avatar" id="driverAvatar">?</div>
+          <div>
+            <div class="driver-name" id="driverName">راننده</div>
+            <div class="driver-code" id="driverCode">---</div>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()">خروج ↩</button>
+      </div>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+
+    <!-- Status Banner -->
+    <div class="status-banner draft" id="statusBanner">
+      <span>📝</span> <span id="statusText">در حال ثبت کارکرد</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-value" id="statTrips">۰</div>
+        <div class="stat-label">سفر امروز</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="statIncome" style="color:#059669">۰</div>
+        <div class="stat-label">درآمد امروز</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="statMonthly" style="color:#7c3aed">۰</div>
+        <div class="stat-label">درآمد ماه</div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="content" id="mainContent">
+      <!-- Trips List -->
+      <div id="tripsSection">
+        <div class="section-title">سفرهای امروز</div>
+        <div id="tripsList"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Nav -->
+    <div class="bottom-nav">
+      <button class="nav-item active" onclick="showTab('trips')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        سفرها
+      </button>
+      <button class="nav-item nav-add" onclick="showRegister()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="nav-item" onclick="showTab('calendar')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        تقویم
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════ REGISTER TRIP SCREEN ═══════════ -->
+  <div id="registerScreen" class="screen register-screen">
+    <div class="register-header">
+      <button class="back-btn" onclick="hideRegister()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <h2 style="font-size:16px;font-weight:600">ثبت سفر جدید</h2>
+    </div>
+    <div class="register-form">
+      <div class="form-group">
+        <label>مبدأ</label>
+        <select id="regOrigin">
+          <option value="">انتخاب مبدأ...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>مقصد</label>
+        <select id="regDest">
+          <option value="">انتخاب مقصد...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ساعت شروع</label>
+        <input type="time" id="regTime" />
+      </div>
+      <div class="form-group">
+        <label>توضیحات (اختیاری)</label>
+        <input type="text" id="regNote" placeholder="توضیحات..." />
+      </div>
+
+      <!-- Route Result -->
+      <div id="routeResult" style="display:none"></div>
+      <div id="routeNotFound" style="display:none"></div>
+
+      <button class="btn-confirm" id="btnConfirmTrip" onclick="confirmTrip()" disabled>
+        ✅ تأیید و ثبت سفر
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════ FINALIZE SUMMARY ═══════════ -->
+  <div id="summaryOverlay" class="summary-overlay" style="display:none" onclick="closeSummary(event)">
+    <div class="summary-sheet" onclick="event.stopPropagation()">
+      <div class="summary-title">ثبت نهایی کارکرد روز</div>
+      <div class="summary-date" id="summaryDate"></div>
+      <div id="summaryTrips"></div>
+      <div class="summary-total">
+        <span>مجموع درآمد</span>
+        <span id="summaryTotal" style="color:#059669"></span>
+      </div>
+      <button class="btn-finalize" onclick="finalizeDay()" style="margin-top:16px">
+        ✅ تأیید و ثبت نهایی
+      </button>
+      <button class="btn-danger" onclick="closeSummary()">انصراف</button>
+    </div>
+  </div>  <script>
+    // ═══════════ CONFIG ═══════════
+    // When served from backend (e.g., /driver/index.html), use same origin
+    const isServedFromBackend = window.location.pathname.includes('/driver/');
+    const API_BASE = isServedFromBackend
+      ? `${window.location.origin}/api`
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000/api'
+        : `${window.location.protocol}//${window.location.hostname}:3000/api`;
+
+    // ═══════════ API CLIENT ═══════════
+    let authToken = localStorage.getItem('driver_token') || null;
+
+    async function apiCall(endpoint, options = {}) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+      const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error?.message || 'خطای سرور');
+      return data;
+    }
+
+    // ═══════════ JALALI DATE UTILITIES ═══════════
+    function gregorianToJalali(gy, gm, gd) {
+      const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+      let gy2 = (gm > 2) ? (gy + 1) : gy;
+      let days = 355666 + (365 * gy) + Math.floor((gy2 + 3) / 4) - Math.floor((gy2 + 99) / 100) + Math.floor((gy2 + 399) / 400) + gd + g_d_m[gm - 1];
+      let jy = -1595 + (33 * Math.floor(days / 12053));
+      days %= 12053;
+      jy += 4 * Math.floor(days / 1461);
+      days %= 1461;
+      if (days > 365) { jy += Math.floor((days - 1) / 365); days = (days - 1) % 365; }
+      let jm, jd;
+      if (days < 186) { jm = 1 + Math.floor(days / 31); jd = 1 + (days % 31); }
+      else { jm = 7 + Math.floor((days - 186) / 30); jd = 1 + ((days - 186) % 30); }
+      return [jy, jm, jd];
+    }
+
+    function jalaliToGregorian(jy, jm, jd) {
+      let sal_a = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+      let gy = jy + 1595;
+      let days = -355668 + (365 * jy) + (Math.floor(jy / 33) * 8) + Math.floor(((jy % 33) + 3) / 4) + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 6);
+      let gm;
+      for (gm = 0; gm < 12 && days > sal_a[gm]; gm++) { days -= sal_a[gm]; }
+      return [gy, gm + 1, days + 1];
+    }
+
+    const jMonths = ['فروردین','اردیبهشت','خرداد','تیر','مرداد','شهریور','مهر','آبان','آذر','دی','بهمن','اسفند'];
+    const jDaysShort = ['ش','ی','د','س','چ','پ','ج'];
+    const jDaysFull = ['شنبه','یکشنبه','دوشنبه','سه‌شنبه','چهارشنبه','پنجشنبه','جمعه'];
+
+    function toJalaliStr(date) {
+      const [jy,jm,jd] = gregorianToJalali(date.getFullYear(), date.getMonth()+1, date.getDate());
+      return `${jy}/${String(jm).padStart(2,'0')}/${String(jd).padStart(2,'0')}`;
+    }
+
+    function getJDayOfWeek(date) {
+      // JS: 0=Sun, 6=Sat → Jalali: 0=Sat, 6=Fri
+      const dow = date.getDay();
+      return dow === 6 ? 6 : (dow + 1) % 7;
+    }
+
+    function getJDaysInMonth(jy, jm) {
+      const isLeap = ((jy + 1) % 33) % 4 === 1;
+      if (jm <= 6) return 31;
+      if (jm <= 11) return 30;
+      return isLeap ? 30 : 29;
+    }
+
+    // ═══════════ LOCATION STATE (loaded from API) ═══════════
+    let LOCATION_NAMES = [];
+    const ORIGIN = 'انبار مرکزی انتخاب (مورچه خورت)';
+
+
+
+    // ═══════════ APP STATE ═══════════
+    let currentUser = null;
+    let driverProfile = null;
+    let selectedDate = new Date();
+    let currentTripRoute = null;
+    let dailyWorkId = null;
+    let dayStatus = 'DRAFT';
+
+    // ═══════════ LOGIN (via API) ═══════════
+    async function handleLogin() {
+      const username = document.getElementById('loginUsername').value.trim().toLowerCase();
+      const password = document.getElementById('loginPassword').value;
+      const errEl = document.getElementById('loginError');
+
+      if (!username || !password) { errEl.textContent = 'نام کاربری و رمز را وارد کنید'; return; }
+
+      try {
+        errEl.textContent = 'در حال ورود...';
+        const res = await apiCall('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ username, password }),
+        });
+
+        authToken = res.data.token;
+        localStorage.setItem('driver_token', authToken);
+
+        // Get driver profile
+        const meRes = await apiCall('/auth/me');
+        if (!meRes.data.driver) {
+          throw new Error('حساب شما به راننده‌ای متصل نیست');
+        }
+        currentUser = { ...meRes.data, ...meRes.data.driver };
+        driverProfile = meRes.data.driver;
+
+        // Load locations
+        await loadLocations();
+
+        errEl.textContent = '';
+        showApp();
+      } catch (err) {
+        errEl.textContent = err.message;
+        document.getElementById('loginCard').classList.add('shake');
+        setTimeout(() => document.getElementById('loginCard').classList.remove('shake'), 400);
+      }
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      driverProfile = null;
+      authToken = null;
+      localStorage.removeItem('driver_token');
+      showScreen('loginScreen');
+      document.getElementById('loginPassword').value = '';
+    }
+
+    async function checkSession() {
+      if (!authToken) return;
+      try {
+        const meRes = await apiCall('/auth/me');
+        if (meRes.data.driver) {
+          currentUser = { ...meRes.data, ...meRes.data.driver };
+          driverProfile = meRes.data.driver;
+          await loadLocations();
+          showApp();
+        }
+      } catch {
+        localStorage.removeItem('driver_token');
+        authToken = null;
+      }
+    }
+
+    async function loadLocations() {
+      try {
+        const res = await apiCall('/locations?includeInactive=false');
+        LOCATION_NAMES = (res.data || []).map(l => l.name).sort((a,b) => a.localeCompare(b, 'fa'));
+      } catch { LOCATION_NAMES = []; }
+    }
+
+    // ═══════════ NAVIGATION ═══════════
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showApp() {
+      showScreen('appScreen');
+      document.getElementById('driverName').textContent = currentUser.fullName || currentUser.username;
+      document.getElementById('driverCode').textContent = currentUser.driverCode || currentUser.username;
+      document.getElementById('driverAvatar').textContent = (currentUser.fullName || '?').charAt(0);
+      document.getElementById('headerDate').textContent = new Date().toLocaleDateString('fa-IR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      selectedDate = new Date();
+      refreshMainView();
+    }
+
+    async function refreshMainView() {
+      const mainContent = document.getElementById('mainContent');
+      if (!document.getElementById('tripsList')) {
+        mainContent.innerHTML = '<div id="tripsSection"><div class="section-title">سفرهای امروز</div><div id="tripsList"></div></div>';
+      }
+
+      const today = new Date();
+      const isToday = toJalaliStr(selectedDate) === toJalaliStr(today);
+      const jalaliDate = toJalaliStr(selectedDate);
+      const [jy, jm] = gregorianToJalali(selectedDate.getFullYear(), selectedDate.getMonth()+1, selectedDate.getDate());
+      const ym = `${jy}/${String(jm).padStart(2,'0')}`;
+
+      let trips = [];
+      let dayStatus = 'DRAFT';
+      dailyWorkId = null;
+
+      try {
+        // Fetch trips for this date
+        const tripsRes = await apiCall(`/trips?date=${jalaliDate}`);
+        trips = (tripsRes.data || []).map(t => ({
+          id: t.id,
+          destination: t.destinationTitle || t.route?.destination?.name || '?',
+          origin: t.originTitle || t.route?.origin?.name || ORIGIN,
+          routeCode: t.routeCode || t.route?.routeCode || '?',
+          price: Number(t.snapshotPrice),
+          km: t.route?.distanceKm || 0,
+          time: t.startTime || '--:--',
+          note: t.description || '',
+          status: 'registered',
+        }));
+
+        // Fetch daily work status
+        const dwRes = await apiCall(`/daily-work/${driverProfile.id}/${jalaliDate}`);
+        if (dwRes.data) {
+          dayStatus = dwRes.data.status;
+          dailyWorkId = dwRes.data.id;
+        }
+      } catch (err) { console.error(err); }
+
+      const totalIncome = trips.reduce((s, t) => s + t.price, 0);
+
+      // Monthly income (approximate from current month trips)
+      let monthlyIncome = 0;
+      try {
+        const monthTrips = await apiCall(`/trips?yearMonth=${ym}`);
+        monthlyIncome = (monthTrips.data || []).reduce((s, t) => s + Number(t.snapshotPrice), 0);
+      } catch {}
+
+      document.getElementById('statTrips').textContent = trips.length.toLocaleString('fa-IR');
+      document.getElementById('statIncome').textContent = formatMoney(totalIncome);
+      document.getElementById('statMonthly').textContent = formatMoney(monthlyIncome);
+
+      // Status banner
+      const banner = document.getElementById('statusBanner');
+      const statusText = document.getElementById('statusText');
+      if (dayStatus === 'FINALIZED') {
+        banner.className = 'status-banner finalized';
+        statusText.textContent = '✅ کارکرد نهایی شده';
+      } else if (dayStatus === 'PENDING_APPROVAL') {
+        banner.className = 'status-banner pending';
+        statusText.textContent = '⏳ کارکرد به مدیریت ارسال شده';
+      } else if (trips.length > 0) {
+        banner.className = 'status-banner draft';
+        statusText.textContent = `📝 ${trips.length} سفر ثبت شده — در حال ثبت`;
+      } else {
+        banner.className = 'status-banner draft';
+        statusText.textContent = '📝 در حال ثبت کارکرد';
+      }
+
+      // Render trips
+      const listEl = document.getElementById('tripsList');
+      if (trips.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          <p>سفری ثبت نشده</p>
+          <p style="font-size:12px;margin-top:4px">برای ثبت سفر جدید دکمه + را بزنید</p>
+        </div>`;
+      } else {
+        listEl.innerHTML = trips.map((t) => `
+          <div class="trip-card">
+            <div class="trip-route">${t.origin} ← ${t.destination}</div>
+            <div class="trip-meta">
+              <div>
+                <div class="trip-code">${t.routeCode} • ${t.km} km</div>
+                <div class="trip-time">${t.time} ${t.note ? '• ' + t.note : ''}</div>
+              </div>
+              <div style="text-align:left">
+                <div class="trip-price">${t.price.toLocaleString('fa-IR')} ت</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+        if ((dayStatus === 'DRAFT' || dayStatus === 'REJECTED') && isToday) {
+          listEl.innerHTML += `<button class="btn-finalize" onclick="openSummary()" style="margin-top:8px">📋 ثبت نهایی کارکرد روز</button>`;
+        }
+      }
+    }
+
+    function formatMoney(n) {
+      if (n >= 1000000) return (n / 1000000).toFixed(1) + ' م';
+      if (n >= 1000) return (n / 1000).toFixed(0) + ' ه';
+      return n.toLocaleString('fa-IR');
+    }
+
+    // ═══════════ REGISTER TRIP (via API) ═══════════
+    function showRegister() {
+      if (dayStatus === 'FINALIZED' || dayStatus === 'PENDING_APPROVAL') {
+        showToast('کارکرد این روز قفل است', 'error');
+        return;
+      }
+      showScreen('registerScreen');
+      populateSelects();
+      document.getElementById('routeResult').style.display = 'none';
+      document.getElementById('routeNotFound').style.display = 'none';
+      document.getElementById('btnConfirmTrip').disabled = true;
+      currentTripRoute = null;
+
+      const now = new Date();
+      document.getElementById('regTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    }
+
+    function hideRegister() { showScreen('appScreen'); refreshMainView(); }
+
+    function populateSelects() {
+      const originSel = document.getElementById('regOrigin');
+      const destSel = document.getElementById('regDest');
+      originSel.innerHTML = '<option value="انبار مرکزی انتخاب (مورچه خورت)">انبار مرکزی انتخاب</option>';
+      destSel.innerHTML = '<option value="">انتخاب مقصد...</option>' + LOCATION_NAMES.filter(n => n !== ORIGIN).map(d => `<option value="${d}">${d}</option>`).join('');
+      originSel.value = ORIGIN;
+      originSel.onchange = destSel.onchange = lookupRoute;
+    }
+
+    async function lookupRoute() {
+      const dest = document.getElementById('regDest').value;
+      const resultEl = document.getElementById('routeResult');
+      const notFoundEl = document.getElementById('routeNotFound');
+
+      if (!dest) {
+        resultEl.style.display = 'none';
+        notFoundEl.style.display = 'none';
+        document.getElementById('btnConfirmTrip').disabled = true;
+        currentTripRoute = null;
+        return;
+      }
+
+      try {
+        const res = await apiCall('/routes/lookup', {
+          method: 'POST',
+          body: JSON.stringify({ originName: ORIGIN, destinationName: dest }),
+        });
+        const route = res.data;
+        currentTripRoute = route;
+        resultEl.style.display = 'block';
+        notFoundEl.style.display = 'none';
+        resultEl.innerHTML = `
+          <div class="route-result">
+            <div class="route-result-header">مسیر پیدا شد ✅</div>
+            <div class="route-result-route">${ORIGIN} ← ${dest}</div>
+            <div class="route-detail"><span>کد مسیر</span><strong style="font-family:monospace">${route.routeCode}</strong></div>
+            <div class="route-detail"><span>مسافت</span><strong>${route.distanceKm || '?'} کیلومتر</strong></div>
+            <div class="route-detail"><span>نرخ مصوب</span><strong style="color:#059669">${Number(route.currentPrice).toLocaleString('fa-IR')} تومان</strong></div>
+            <div class="route-price">💰 ${Number(route.currentPrice).toLocaleString('fa-IR')} تومان</div>
+          </div>
+        `;
+        document.getElementById('btnConfirmTrip').disabled = false;
+      } catch (err) {
+        resultEl.style.display = 'none';
+        notFoundEl.style.display = 'block';
+        notFoundEl.innerHTML = `
+          <div class="route-not-found">
+            <p style="font-size:16px;margin-bottom:8px">⚠️</p>
+            <p><strong>${err.message || 'این مسیر در سیستم تعریف نشده است.'}</strong></p>
+            <p style="margin-top:4px;font-size:13px">لطفاً با مسئول کارکرد تماس بگیرید.</p>
+          </div>
+        `;
+        document.getElementById('btnConfirmTrip').disabled = true;
+        currentTripRoute = null;
+      }
+    }
+
+    async function confirmTrip() {
+      if (!currentTripRoute) return;
+
+      const now = new Date();
+      const startTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      const jalaliDate = toJalaliStr(selectedDate);
+
+      try {
+        await apiCall('/trips', {
+          method: 'POST',
+          body: JSON.stringify({
+            routeId: currentTripRoute.id,
+            tripJalaliDate: jalaliDate,
+            startTime,
+            description: document.getElementById('regNote').value,
+          }),
+        });
+        showToast('✅ سفر با موفقیت ثبت شد', 'success');
+        hideRegister();
+      } catch (err) {
+        showToast('❌ ' + err.message, 'error');
+      }
+    }
+
+    // ═══════════ FINALIZE (via API) ═══════════
+    async function openSummary() {
+      const listEl = document.getElementById('tripsList');
+      const cards = listEl.querySelectorAll('.trip-card');
+      if (cards.length === 0) { showToast('سفری ثبت نشده', 'error'); return; }
+
+      // Re-fetch trips from API for accurate data
+      const jalaliDate = toJalaliStr(selectedDate);
+      let trips = [];
+      try {
+        const res = await apiCall(`/trips?date=${jalaliDate}`);
+        trips = res.data || [];
+      } catch { return; }
+
+      const total = trips.reduce((s, t) => s + Number(t.snapshotPrice), 0);
+      const [jy, jm, jd] = gregorianToJalali(selectedDate.getFullYear(), selectedDate.getMonth()+1, selectedDate.getDate());
+      const dayName = jDaysFull[getJDayOfWeek(selectedDate)];
+
+      document.getElementById('summaryDate').textContent = `${dayName} ${jd} ${jMonths[jm-1]} ${jy}`;
+      document.getElementById('summaryTrips').innerHTML = trips.map((t, i) => `
+        <div class="summary-row">
+          <span>${i+1}. ${t.destinationTitle || t.route?.destination?.name || '?'}</span>
+          <span style="font-weight:600;color:#059669">${Number(t.snapshotPrice).toLocaleString('fa-IR')} ت</span>
+        </div>
+      `).join('');
+      document.getElementById('summaryTotal').textContent = total.toLocaleString('fa-IR') + ' تومان';
+      document.getElementById('summaryOverlay').style.display = 'flex';
+    }
+
+    function closeSummary(e) {
+      if (e && e.target !== document.getElementById('summaryOverlay')) return;
+      document.getElementById('summaryOverlay').style.display = 'none';
+    }
+
+    async function finalizeDay() {
+      if (!dailyWorkId) {
+        showToast('کارکردی برای این روز وجود ندارد', 'error');
+        return;
+      }
+      try {
+        await apiCall('/daily-work/submit', {
+          method: 'POST',
+          body: JSON.stringify({
+            driverId: driverProfile.id,
+            jalaliDate: toJalaliStr(selectedDate),
+          }),
+        });
+        document.getElementById('summaryOverlay').style.display = 'none';
+        showToast('✅ کارکرد به مدیریت ارسال شد', 'success');
+        refreshMainView();
+      } catch (err) {
+        showToast('❌ ' + err.message, 'error');
+      }
+    }
+
+    // ═══════════ TABS ═══════════
+    function showTab(tab) {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      if (tab === 'trips') {
+        event.target.closest('.nav-item').classList.add('active');
+        document.getElementById('mainContent').innerHTML = '<div id="tripsSection"><div class="section-title">سفرهای امروز</div><div id="tripsList"></div></div>';
+        selectedDate = new Date();
+        refreshMainView();
+      } else if (tab === 'calendar') {
+        event.target.closest('.nav-item').classList.add('active');
+        showCalendar();
+      }
+    }
+
+    // ═══════════ CALENDAR ═══════════
+    let calMonth = null, calYear = null;
+
+    function showCalendar() {
+      const [jy, jm] = gregorianToJalali(selectedDate.getFullYear(), selectedDate.getMonth()+1, selectedDate.getDate());
+      calYear = jy; calMonth = jm;
+      renderCalendar();
+    }
+
+    async function renderCalendar() {
+      const daysInMonth = getJDaysInMonth(calYear, calMonth);
+      const firstDay = new Date(...jalaliToGregorian(calYear, calMonth, 1));
+      const firstDow = getJDayOfWeek(firstDay);
+
+      const today = new Date();
+      const [tjy, tjm, tjd] = gregorianToJalali(today.getFullYear(), today.getMonth()+1, today.getDate());
+
+      // Fetch trips for the month to show dots
+      const ym = `${calYear}/${String(calMonth).padStart(2,'0')}`;
+      let monthTrips = [];
+      try {
+        const res = await apiCall(`/trips?yearMonth=${ym}`);
+        monthTrips = res.data || [];
+      } catch {}
+      const tripDays = new Set(monthTrips.map(t => parseInt(t.tripJalaliDate.split('/')[2])));
+
+      let grid = jDaysShort.map(d => `<div class="cal-day-name">${d}</div>`).join('');
+      for (let i = 0; i < firstDow; i++) grid += `<div class="cal-day empty"></div>`;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const isToday = calYear === tjy && calMonth === tjm && d === tjd;
+        const [gy, gm, gd] = jalaliToGregorian(calYear, calMonth, d);
+        const date = new Date(gy, gm - 1, gd);
+        const isSel = toJalaliStr(date) === toJalaliStr(selectedDate);
+        const classes = ['cal-day'];
+        if (isToday) classes.push('today');
+        if (isSel && !isToday) classes.push('selected');
+        if (tripDays.has(d)) classes.push('has-trips');
+
+        grid += `<div class="${classes.join(' ')}" onclick="selectCalDay(${d})">${d}</div>`;
+      }
+
+      const content = document.getElementById('mainContent');
+      content.innerHTML = `
+        <div class="calendar-header">
+          <button class="calendar-nav" onclick="calNav(-1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span style="font-weight:700;font-size:15px">${jMonths[calMonth-1]} ${calYear}</span>
+          <button class="calendar-nav" onclick="calNav(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <div class="calendar-grid">${grid}</div>
+        <div id="calDayDetail" style="margin-top:16px"></div>
+      `;
+    }
+
+    function calNav(dir) {
+      calMonth += dir;
+      if (calMonth > 12) { calMonth = 1; calYear++; }
+      if (calMonth < 1) { calMonth = 12; calYear--; }
+      renderCalendar();
+    }
+
+    async function selectCalDay(day) {
+      const [gy, gm, gd] = jalaliToGregorian(calYear, calMonth, day);
+      selectedDate = new Date(gy, gm - 1, gd);
+      const jalaliDate = toJalaliStr(selectedDate);
+
+      const detailEl = document.getElementById('calDayDetail');
+      detailEl.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px">در حال بارگذاری...</p>';
+      renderCalendar();
+
+      let trips = [];
+      try {
+        const res = await apiCall(`/trips?date=${jalaliDate}`);
+        trips = res.data || [];
+      } catch {}
+
+      const total = trips.reduce((s, t) => s + Number(t.snapshotPrice), 0);
+      if (trips.length === 0) {
+        detailEl.innerHTML = '<p style="text-align:center;color:#94a3b8;padding:20px;font-size:14px">سفری در این روز ثبت نشده</p>';
+      } else {
+        detailEl.innerHTML = `
+          <div class="section-title">${day} ${jMonths[calMonth-1]} — ${trips.length} سفر</div>
+          ${trips.map(t => `
+            <div class="trip-card">
+              <div class="trip-route">${t.destinationTitle || t.route?.destination?.name || '?'}</div>
+              <div class="trip-meta">
+                <div class="trip-code">${t.routeCode} • ${t.startTime || '--:--'}</div>
+                <div class="trip-price">${Number(t.snapshotPrice).toLocaleString('fa-IR')} ت</div>
+              </div>
+            </div>
+          `).join('')}
+          <div class="summary-total" style="margin-top:8px">
+            <span>مجموع درآمد</span>
+            <span style="color:#059669">${total.toLocaleString('fa-IR')} تومان</span>
+          </div>
+          <button class="btn-confirm" onclick="showApp(); showTab('trips')" style="margin-top:12px;background:linear-gradient(135deg,#1e40af,#1e3a8a)">
+            📋 مشاهده لیست سفرها
+          </button>
+        `;
+      }
+    }
+
+    // ═══════════ TOAST ═══════════
+    function showToast(msg, type = '') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = msg;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ═══════════ INIT ═══════════
+    document.getElementById('loginPassword').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleLogin();
+    });
+    document.getElementById('loginUsername').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+    });
+
+    checkSession();
+  </script>
+</body>
+</html>
