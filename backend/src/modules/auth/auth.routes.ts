@@ -1,222 +1,251 @@
+```ts
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../../config/database';
-import { generateToken, createSupabaseUser } from '../../middleware/auth';
+import {
+  generateToken,
+  createSupabaseUser,
+} from '../../middleware/auth';
 import { asyncHandler } from '../../middleware/asyncHandler';
 import { AppError } from '../../middleware/AppError';
 import { authenticate } from '../../middleware/auth';
-import { todayJalaliString, getJalaliDateTimeString } from '../../utils/persianDate';
+import { getJalaliDateTimeString } from '../../utils/persianDate';
 import { config } from '../../config/env';
-import { getSupabaseAdmin } from '../../config/supabase';
 
 const router = Router();
 
 /**
  * POST /api/auth/login
- * Authenticate user and return JWT token
- * Supports both Supabase Auth and legacy bcrypt authentication
+ * Login using PostgreSQL User table + bcrypt
  */
-router.post('/login', asyncHandler(async (req, res) => {
-  const { username, password } = req.body;
+router.post(
+  '/login',
+  asyncHandler(async (req, res) => {
+    const { username, password } = req.body;
 
-  if (!username || !password) {
-    throw AppError.badRequest('نام کاربری و رمز عبور الزامی است');
-  }
-
-  const user = await prisma.user.findUnique({ where: { username } });
-  if (!user) {
-    throw AppError.unauthorized('نام کاربری یا رمز عبور اشتباه است');
-  }
-
-  if (!user.isActive) {
-    throw AppError.forbidden('حساب کاربری شما غیرفعال شده است');
-  }
-
-  let token: string;
-
-  // Try Supabase Auth first if configured
-  if (config.supabaseUrl && config.supabaseAnonKey) {
-    try {
-      const supabase = getSupabaseAdmin();
-      const email = `${username}@arman-fleet.local`; // Create email from username
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (!error && data.session) {
-        token = data.session.access_token;
-      } else {
-        // Fall back to legacy authentication
-        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isPasswordValid) {
-          throw AppError.unauthorized('نام کاربری یا رمز عبور اشتباه است');
-        }
-        token = generateToken({
-          userId: user.id,
-          username: user.username,
-          role: user.role,
-        });
-      }
-    } catch (supabaseError) {
-      // Fall back to legacy authentication
-      const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-      if (!isPasswordValid) {
-        throw AppError.unauthorized('نام کاربری یا رمز عبور اشتباه است');
-      }
-      token = generateToken({
-        userId: user.id,
-        username: user.username,
-        role: user.role,
-      });
+    if (!username || !password) {
+      throw AppError.badRequest(
+        'نام کاربری و رمز عبور الزامی است'
+      );
     }
-  } else {
-    // Legacy authentication only
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+
+    // Find user in database
+    const user = await prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (!user) {
+      throw AppError.unauthorized(
+        'نام کاربری یا رمز عبور اشتباه است'
+      );
+    }
+
+    // Check active status
+    if (!user.isActive) {
+      throw AppError.forbidden(
+        'حساب کاربری شما غیرفعال شده است'
+      );
+    }
+
+    // Compare entered password with bcrypt hash
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.passwordHash
+    );
+
     if (!isPasswordValid) {
-      throw AppError.unauthorized('نام کاربری یا رمز عبور اشتباه است');
+      throw AppError.unauthorized(
+        'نام کاربری یا رمز عبور اشتباه است'
+      );
     }
-    token = generateToken({
+
+    // Generate application JWT
+    const token = generateToken({
       userId: user.id,
       username: user.username,
       role: user.role,
     });
-  }
 
-  // Log the login
-  await prisma.auditLog.create({
-    data: {
-      userId: user.id,
-      operatorName: user.username,
-      operatorRole: user.role,
-      action: 'LOGIN',
-      entityTitle: 'ورود به سیستم',
-      details: `ورود موفق کاربر ${user.username} با نقش ${user.role}`,
-      jalaliTimestamp: getJalaliDateTimeString(),
-    },
-  });
-
-  res.json({
-    success: true,
-    data: {
-      token,
-      user: {
-        id: user.id,
-        username: user.username,
-        role: user.role,
+    // Save login audit
+    await prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        operatorName: user.username,
+        operatorRole: user.role,
+        action: 'LOGIN',
+        entityTitle: 'ورود به سیستم',
+        details: `ورود موفق کاربر ${user.username} با نقش ${user.role}`,
+        jalaliTimestamp: getJalaliDateTimeString(),
       },
-    },
-  });
-}));
+    });
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+        },
+      },
+    });
+  })
+);
 
 /**
  * POST /api/auth/register
  * Register new user (Admin only)
  */
-router.post('/register', authenticate, asyncHandler(async (req, res) => {
-  if (req.user?.role !== 'ADMIN') {
-    throw AppError.forbidden('فقط مدیر سیستم می‌تواند کاربر جدید ایجاد کند');
-  }
-
-  const { username, password, role } = req.body;
-
-  if (!username || !password) {
-    throw AppError.badRequest('نام کاربری و رمز عبور الزامی است');
-  }
-
-  if (password.length < 6) {
-    throw AppError.badRequest('رمز عبور باید حداقل ۶ کاراکتر باشد');
-  }
-
-  const validRoles = ['DRIVER', 'ADMIN', 'FINANCE'];
-  const userRole = validRoles.includes(role) ? role : 'DRIVER';
-
-  const existingUser = await prisma.user.findUnique({ where: { username } });
-  if (existingUser) {
-    throw AppError.conflict('نام کاربری تکراری است');
-  }
-
-  const passwordHash = await bcrypt.hash(password, 12);
-
-  // Create Supabase Auth user if configured
-  let supabaseUserId: string | null = null;
-  if (config.supabaseUrl && config.supabaseServiceRoleKey) {
-    const email = `${username}@arman-fleet.local`;
-    const supabaseUser = await createSupabaseUser(email, password, {
-      username,
-      role: userRole,
-    });
-    if (supabaseUser) {
-      supabaseUserId = supabaseUser.id;
+router.post(
+  '/register',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    if (req.user?.role !== 'ADMIN') {
+      throw AppError.forbidden(
+        'فقط مدیر سیستم می‌تواند کاربر جدید ایجاد کند'
+      );
     }
-  }
 
-  // Create user in our database
-  const user = await prisma.user.create({
-    data: {
-      id: supabaseUserId || undefined, // Use Supabase user ID if available
-      username,
-      passwordHash,
-      role: userRole,
-    },
-  });
+    const { username, password, role } = req.body;
 
-  // Audit log
-  await prisma.auditLog.create({
-    data: {
-      userId: req.user.userId,
-      operatorName: req.user.username,
-      operatorRole: req.user.role,
-      action: 'CREATE_USER',
-      entityTitle: `کاربر جدید: ${username}`,
-      details: `ایجاد کاربر ${username} با نقش ${userRole}${supabaseUserId ? ' (Supabase Auth)' : ''}`,
-      jalaliTimestamp: getJalaliDateTimeString(),
-    },
-  });
+    if (!username || !password) {
+      throw AppError.badRequest(
+        'نام کاربری و رمز عبور الزامی است'
+      );
+    }
 
-  res.status(201).json({
-    success: true,
-    data: {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-    },
-  });
-}));
+    if (password.length < 6) {
+      throw AppError.badRequest(
+        'رمز عبور باید حداقل ۶ کاراکتر باشد'
+      );
+    }
+
+    const validRoles = ['DRIVER', 'ADMIN', 'FINANCE'];
+
+    const userRole = validRoles.includes(role)
+      ? role
+      : 'DRIVER';
+
+    // Check duplicate username
+    const existingUser = await prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (existingUser) {
+      throw AppError.conflict(
+        'نام کاربری تکراری است'
+      );
+    }
+
+    // Create bcrypt password hash
+    const passwordHash = await bcrypt.hash(
+      password,
+      12
+    );
+
+    // Create Supabase Auth user if configured
+    let supabaseUserId: string | null = null;
+
+    if (
+      config.supabaseUrl &&
+      config.supabaseServiceRoleKey
+    ) {
+      const email = `${username}@arman-fleet.local`;
+
+      const supabaseUser = await createSupabaseUser(
+        email,
+        password,
+        {
+          username,
+          role: userRole,
+        }
+      );
+
+      if (supabaseUser) {
+        supabaseUserId = supabaseUser.id;
+      }
+    }
+
+    // Create user in PostgreSQL
+    const user = await prisma.user.create({
+      data: {
+        id: supabaseUserId || undefined,
+        username,
+        passwordHash,
+        role: userRole,
+      },
+    });
+
+    // Audit log
+    await prisma.auditLog.create({
+      data: {
+        userId: req.user.userId,
+        operatorName: req.user.username,
+        operatorRole: req.user.role,
+        action: 'CREATE_USER',
+        entityTitle: `کاربر جدید: ${username}`,
+        details: `ایجاد کاربر ${username} با نقش ${userRole}${
+          supabaseUserId
+            ? ' (Supabase Auth)'
+            : ''
+        }`,
+        jalaliTimestamp: getJalaliDateTimeString(),
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
+    });
+  })
+);
 
 /**
  * GET /api/auth/me
- * Get current authenticated user info
+ * Get current authenticated user
  */
-router.get('/me', authenticate, asyncHandler(async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user!.userId },
-    include: { driver: true },
-  });
+router.get(
+  '/me',
+  authenticate,
+  asyncHandler(async (req, res) => {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.userId },
+      include: { driver: true },
+    });
 
-  if (!user) {
-    throw AppError.notFound('کاربر یافت نشد');
-  }
+    if (!user) {
+      throw AppError.notFound(
+        'کاربر یافت نشد'
+      );
+    }
 
-  res.json({
-    success: true,
-    data: {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      isActive: user.isActive,
-      driver: user.driver ? {
-        id: user.driver.id,
-        fullName: user.driver.fullName,
-        driverCode: user.driver.driverCode,
-        personnelCode: user.driver.personnelCode,
-        phoneNumber: user.driver.phoneNumber,
-        carModel: user.driver.carModel,
-        carPlate: user.driver.carPlate,
-      } : null,
-    },
-  });
-}));
+    res.json({
+      success: true,
+      data: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        isActive: user.isActive,
+        driver: user.driver
+          ? {
+              id: user.driver.id,
+              fullName: user.driver.fullName,
+              driverCode: user.driver.driverCode,
+              personnelCode: user.driver.personnelCode,
+              phoneNumber: user.driver.phoneNumber,
+              carModel: user.driver.carModel,
+              carPlate: user.driver.carPlate,
+            }
+          : null,
+      },
+    });
+  })
+);
 
 export default router;
+```
