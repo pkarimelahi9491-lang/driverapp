@@ -18,5 +18,5 @@ export function parseTomanInput(input: string): bigint {
 }
 
 export function sumToman(values: (bigint | number)[]): bigint {
-  return values.reduce((acc, val) => acc + BigInt(val), 0n);
+  return values.reduce((acc: bigint, val) => acc + BigInt(val), 0n);
 }
