@@ -1,6 +1,3 @@
-حتماً. کل فایل `persianDate.ts` رو با این نسخه جایگزین کن؛ **فقط اصلاح لازم (`const gy` → `let gy`) انجام شده**:
-
-```ts
 /**
  * Jalali (Persian/Solar Hijri) Date Utilities for Backend
  * Handles date conversions and formatting for the fleet system
