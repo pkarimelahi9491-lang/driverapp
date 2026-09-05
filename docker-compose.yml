@@ -1,12 +1,15 @@
 # ═══════════════════════════════════════════════════════════════════
 # Arman Fleet - Docker Compose
-# Full stack: Backend API + PostgreSQL
+# Backend API + Supabase PostgreSQL
 # ═══════════════════════════════════════════════════════════════════
 
 version: '3.8'
 
 services:
-  # ─── PostgreSQL Database ────────────────────────────────────────
+
+  # ─── PostgreSQL محلی ────────────────────────────────────────────
+  # فعلاً نگهش می‌داریم تا اطلاعات قبلی از بین نرود.
+  # Backend دیگر از این دیتابیس استفاده نمی‌کند.
   postgres:
     image: postgres:16-alpine
     container_name: arman-fleet-db
@@ -30,23 +33,35 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+
     container_name: arman-fleet-api
+
     restart: unless-stopped
+
     ports:
       - "3000:3000"
+
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: postgresql://arman:arman_secret_123@postgres:5432/arman_fleet
-      JWT_SECRET: change-this-to-a-strong-secret-in-production
-      JWT_EXPIRES_IN: 24h
-      CORS_ORIGIN: "*"
-      SUPABASE_URL: ""
-      SUPABASE_ANON_KEY: ""
-      SUPABASE_SERVICE_ROLE_KEY: ""
-    depends_on:
-      postgres:
-        condition: service_healthy
+      NODE_ENV: ${NODE_ENV}
+      PORT: ${PORT}
+
+      # اتصال Prisma به PostgreSQL در Supabase
+      DATABASE_URL: ${DATABASE_URL}
+
+      # Supabase
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN}
+
+      CORS_ORIGIN: ${CORS_ORIGIN}
+
+    # فعلاً وابستگی به PostgreSQL محلی را حذف می‌کنیم
+    # چون DATABASE_URL به Supabase اشاره می‌کند.
 
 volumes:
   pgdata:
