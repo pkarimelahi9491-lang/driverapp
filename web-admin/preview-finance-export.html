@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>گزارش مالی — هلدینگ آرمان انتخاب</title>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33/Vazirmatn-font-face.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    body { font-family: 'Vazirmatn', system-ui, sans-serif; direction: rtl; background: #f0f4f8; }
+    .glass-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); border: 1px solid rgba(226,232,240,0.6); border-radius: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+    @media print {
+      body { background: white !important; font-size: 11px; }
+      .no-print { display: none !important; }
+      .print-header { display: block !important; text-align: center; margin-bottom: 1rem; }
+      .glass-card { background: white !important; backdrop-filter: none !important; border: 1px solid #ccc !important; box-shadow: none !important; }
+      @page { margin: 1cm; size: A4 landscape; }
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    .status-badge { padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .status-badge.active { ring: 2px; }
+    .btn-export { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: 500; color: white; cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-export:hover { filter: brightness(0.9); transform: translateY(-1px); }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Print Header -->
+  <div class="print-header hidden">
+    <h1 style="font-size:20px;font-weight:bold">گزارش کارکرد و تسویه‌حساب مالی رانندگان</h1>
+    <h2 style="font-size:14px">هلدینگ آرمان انتخاب</h2>
+    <p id="printPeriod" style="font-size:12px"></p>
+  </div>
+
+  <div class="max-w-7xl mx-auto p-6 space-y-6">
+    <!-- Title -->
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">گزارش مالی و تسویه‌حساب</h1>
+      <p class="text-sm text-gray-500 mt-1">گزارش کارکرد و پرداخت رانندگان + خروجی چاپ و اکسل</p>
+    </div>
+
+    <!-- Controls -->
+    <div class="glass-card p-4 no-print">
+      <div class="flex flex-wrap gap-4 items-center">
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium text-gray-600">دوره مالی:</label>
+          <input type="month" id="yearMonth" class="px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-400" />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-500">وضعیت:</span>
+          <button class="status-badge bg-amber-50 text-amber-700 active" onclick="setStatus(this, 'PENDING_APPROVAL')">در انتظار تأیید</button>
+          <button class="status-badge bg-blue-50 text-blue-700" onclick="setStatus(this, 'APPROVED')">تأیید شده</button>
+          <button class="status-badge bg-purple-50 text-purple-700" onclick="setStatus(this, 'SENT_TO_FINANCE')">ارسال به مالی</button>
+          <button class="status-badge bg-green-50 text-green-700" onclick="setStatus(this, 'PAID')">پرداخت شده</button>
+        </div>
+      </div>
+      <!-- Export Buttons -->
+      <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-gray-100">
+        <span class="text-sm font-medium text-gray-500 self-center ml-2">خروجی:</span>
+        <button class="btn-export bg-green-600 hover:bg-green-700" onclick="exportCsv()">📄 CSV</button>
+        <button class="btn-export bg-emerald-600 hover:bg-emerald-700" onclick="exportExcel()">📊 Excel</button>
+        <button class="btn-export bg-red-600 hover:bg-red-700" onclick="exportPdf()">📥 PDF</button>
+        <button class="btn-export bg-gray-600 hover:bg-gray-700" onclick="window.print()">🖨️ پرینت</button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="glass-card p-4">
+        <p class="text-sm text-gray-500">مجموع تأیید شده</p>
+        <p class="text-xl font-bold text-green-600 mt-1" id="totalFinalized">0 تومان</p>
+      </div>
+      <div class="glass-card p-4">
+        <p class="text-sm text-gray-500">مجموع در انتظار</p>
+        <p class="text-xl font-bold text-amber-600 mt-1" id="totalDraft">0 تومان</p>
+      </div>
+      <div class="glass-card p-4">
+        <p class="text-sm text-gray-500">تعداد رانندگان</p>
+        <p class="text-xl font-bold text-blue-600 mt-1" id="totalDrivers">0 نفر</p>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="glass-card overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-100">
+              <th class="text-right px-4 py-3 font-medium text-gray-500">ردیف</th>
+              <th class="text-right px-4 py-3 font-medium text-gray-500">راننده</th>
+              <th class="text-right px-4 py-3 font-medium text-gray-500">کد</th>
+              <th class="text-right px-4 py-3 font-medium text-gray-500">کد پرسنلی</th>
+              <th class="text-right px-4 py-3 font-medium text-gray-500">روز کاری</th>
+              <th class="text-right px-4 py-3 font-medium text-gray-500">تعداد سفر</th>
+              <th class="text-right px-4 py-3 font-medium text-gray-500">مبلغ تأیید شده</th>
+              <th class="text-right px-4 py-3 font-medium text-gray-500">مبلغ در انتظار</th>
+              <th class="text-right px-4 py-3 font-medium text-gray-500 no-print">جمع قابل پرداخت</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+          <tfoot id="tableFooter" class="bg-gray-50 font-bold"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Print Footer -->
+    <div class="hidden print:block mt-8 text-center text-xs text-gray-500 border-t pt-4">
+      <p>هلدینگ آرمان انتخاب — گزارش مالی</p>
+      <p>این گزارش به صورت خودکار توسط سیستم مدیریت کارکرد تولید شده است.</p>
+    </div>
+  </div>
+
+  <script>
+    // ─── Sample Data ───
+    const sampleData = [
+      { name: 'علی رضایی', code: 'AR-101', personnel: 'D001', days: 22, trips: 86, finalized: 25400000, draft: 3500000 },
+      { name: 'رضا محمدی', code: 'AR-102', personnel: 'D002', days: 20, trips: 71, finalized: 21700000, draft: 0 },
+      { name: 'محمد حسینی', code: 'AR-103', personnel: 'D003', days: 24, trips: 92, finalized: 28900000, draft: 2700000 },
+      { name: 'امیر کاظمی', code: 'AR-104', personnel: 'D004', days: 18, trips: 63, finalized: 18200000, draft: 4500000 },
+      { name: 'حسن عباسی', code: 'AR-105', personnel: 'D005', days: 21, trips: 78, finalized: 23100000, draft: 0 },
+      { name: 'سعید رستمی', code: 'AR-106', personnel: 'D006', days: 23, trips: 85, finalized: 26800000, draft: 1800000 },
+      { name: 'حسین آقایی', code: 'AR-107', personnel: 'D007', days: 19, trips: 68, finalized: 20500000, draft: 0 },
+      { name: 'روح‌الله نوری', code: 'AR-108', personnel: 'D008', days: 25, trips: 95, finalized: 31200000, draft: 2100000 },
+      { name: 'فرهاد شریفی', code: 'AR-109', personnel: 'D009', days: 17, trips: 58, finalized: 16800000, draft: 3200000 },
+      { name: 'مرتضی بهرامی', code: 'AR-110', personnel: 'D010', days: 22, trips: 80, finalized: 24300000, draft: 0 },
+    ];
+
+    let currentStatus = 'PENDING_APPROVAL';
+    const statusLabels = {
+      CALCULATING: 'محاسبه نشده', PENDING_APPROVAL: 'در انتظار تأیید',
+      APPROVED: 'تأیید شده', SENT_TO_FINANCE: 'ارسال به مالی', PAID: 'پرداخت شده'
+    };
+
+    // Init
+    const now = new Date();
+    document.getElementById('yearMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    renderTable();
+
+    function setStatus(btn, status) {
+      currentStatus = status;
+      document.querySelectorAll('.status-badge').forEach(b => b.classList.remove('active','ring-2','ring-offset-1','ring-blue-400'));
+      btn.classList.add('active','ring-2','ring-offset-1','ring-blue-400');
+    }
+
+    function fmt(n) { return n.toLocaleString('fa-IR'); }
+
+    function renderTable() {
+      const ym = document.getElementById('yearMonth').value;
+      document.getElementById('printPeriod').textContent = `دوره مالی: ${ym}`;
+
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = sampleData.map((r, i) => `
+        <tr class="border-b border-gray-50 hover:bg-gray-50/50">
+          <td class="px-4 py-3 text-gray-500">${i + 1}</td>
+          <td class="px-4 py-3 font-medium">${r.name}</td>
+          <td class="px-4 py-3 font-mono text-gray-600">${r.code}</td>
+          <td class="px-4 py-3 text-gray-600">${r.personnel}</td>
+          <td class="px-4 py-3 text-gray-600">${r.days} روز</td>
+          <td class="px-4 py-3 text-gray-600">${r.trips} سفر</td>
+          <td class="px-4 py-3 font-bold text-green-600">${fmt(r.finalized)} ت</td>
+          <td class="px-4 py-3 font-bold text-amber-600">${fmt(r.draft)} ت</td>
+          <td class="px-4 py-3 font-bold text-blue-700 no-print">${fmt(r.finalized + r.draft)} ت</td>
+        </tr>
+      `).join('');
+
+      const totalF = sampleData.reduce((s, r) => s + r.finalized, 0);
+      const totalD = sampleData.reduce((s, r) => s + r.draft, 0);
+
+      document.getElementById('tableFooter').innerHTML = `
+        <tr>
+          <td colspan="5" class="px-4 py-3 text-right">جمع کل</td>
+          <td class="px-4 py-3 text-green-600">${fmt(totalF)} ت</td>
+          <td class="px-4 py-3 text-amber-600">${fmt(totalD)} ت</td>
+          <td class="px-4 py-3 text-blue-700 no-print">${fmt(totalF + totalD)} ت</td>
+        </tr>`;
+
+      document.getElementById('totalFinalized').textContent = fmt(totalF) + ' تومان';
+      document.getElementById('totalDraft').textContent = fmt(totalD) + ' تومان';
+      document.getElementById('totalDrivers').textContent = sampleData.length + ' نفر';
+    }
+
+    document.getElementById('yearMonth').addEventListener('change', renderTable);
+
+    // ─── CSV Export ───
+    function exportCsv() {
+      const ym = document.getElementById('yearMonth').value;
+      let csv = '\uFEFF';
+      csv += 'گزارش کارکرد و تسویه‌حساب مالی رانندگان هلدینگ آرمان انتخاب\n';
+      csv += `دوره مالی: ${ym}\n`;
+      csv += `تاریخ خروجی: ${new Date().toLocaleDateString('fa-IR')}\n\n`;
+      csv += 'ردیف,نام و نام خانوادگی,کد راننده,کد پرسنلی,روز کاری,تعداد سفر,مبلغ تأیید شده,مبلغ در انتظار,جمع قابل پرداخت\n';
+
+      sampleData.forEach((r, i) => {
+        csv += `${i+1},"${r.name}",${r.code},${r.personnel},${r.days},${r.trips},${r.finalized},${r.draft},${r.finalized+r.draft}\n`;
+      });
+
+      const totalF = sampleData.reduce((s, r) => s + r.finalized, 0);
+      const totalD = sampleData.reduce((s, r) => s + r.draft, 0);
+      csv += `\nجمع کل,,,,,,${totalF},${totalD},${totalF+totalD}\n`;
+
+      downloadBlob(csv, `گزارش-مالی-${ym}.csv`, 'text/csv;charset=utf-8;');
+    }
+
+    // ─── Excel Export ───
+    function exportExcel() {
+      const ym = document.getElementById('yearMonth').value;
+      const wsData = [
+        ['گزارش کارکرد و تسویه‌حساب مالی رانندگان هلدینگ آرمان انتخاب'],
+        [`دوره مالی: ${ym}`],
+        [`تاریخ خروجی: ${new Date().toLocaleDateString('fa-IR')}`],
+        [],
+        ['ردیف', 'نام و نام خانوادگی', 'کد راننده', 'کد پرسنلی', 'روز کاری', 'تعداد سفر', 'مبلغ تأیید شده', 'مبلغ در انتظار', 'جمع قابل پرداخت'],
+      ];
+
+      sampleData.forEach((r, i) => {
+        wsData.push([i+1, r.name, r.code, r.personnel, r.days, r.trips, r.finalized, r.draft, r.finalized+r.draft]);
+      });
+
+      const totalF = sampleData.reduce((s, r) => s + r.finalized, 0);
+      const totalD = sampleData.reduce((s, r) => s + r.draft, 0);
+      wsData.push([]);
+      wsData.push(['', '', '', '', '', 'جمع کل', totalF, totalD, totalF+totalD]);
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      ws['!cols'] = [{wch:6},{wch:22},{wch:12},{wch:14},{wch:10},{wch:10},{wch:18},{wch:18},{wch:18}];
+      ws['!merges'] = [
+        {s:{r:0,c:0},e:{r:0,c:8}},
+        {s:{r:1,c:0},e:{r:1,c:8}},
+        {s:{r:2,c:0},e:{r:2,c:8}},
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'گزارش مالی');
+      XLSX.writeFile(wb, `گزارش-مالی-${ym}.xlsx`);
+    }
+
+    // ─── PDF Export ───
+    function exportPdf() {
+      const ym = document.getElementById('yearMonth').value;
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+      doc.setFontSize(16);
+      doc.text('Arman Entekhab Fleet - Monthly Financial Report', 148, 15, { align: 'center' });
+      doc.setFontSize(11);
+      doc.text(`Period: ${ym} | Status: ${statusLabels[currentStatus]}`, 148, 22, { align: 'center' });
+      doc.text(`Generated: ${new Date().toLocaleDateString('en-US')}`, 148, 28, { align: 'center' });
+
+      const tableData = sampleData.map((r, i) => [
+        String(i+1), r.name, r.code, r.personnel,
+        String(r.days), String(r.trips),
+        r.finalized.toLocaleString('en-US') + ' IRR',
+        r.draft.toLocaleString('en-US') + ' IRR',
+        (r.finalized + r.draft).toLocaleString('en-US') + ' IRR',
+      ]);
+
+      const totalF = sampleData.reduce((s, r) => s + r.finalized, 0);
+      const totalD = sampleData.reduce((s, r) => s + r.draft, 0);
+      tableData.push(['','','','','','TOTAL',
+        totalF.toLocaleString('en-US') + ' IRR',
+        totalD.toLocaleString('en-US') + ' IRR',
+        (totalF+totalD).toLocaleString('en-US') + ' IRR'
+      ]);
+
+      doc.autoTable({
+        startY: 34,
+        head: [['#','Driver Name','Code','Personnel','Work Days','Trips','Approved (IRR)','Pending (IRR)','Total Payable']],
+        body: tableData,
+        theme: 'grid',
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [30, 64, 175], textColor: 255 },
+        columnStyles: { 6:{halign:'right'}, 7:{halign:'right'}, 8:{halign:'right',fontStyle:'bold'} },
+      });
+
+      doc.save(`arman-fleet-report-${ym}.pdf`);
+    }
+
+    function downloadBlob(content, filename, type) {
+      const blob = new Blob([content], { type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
