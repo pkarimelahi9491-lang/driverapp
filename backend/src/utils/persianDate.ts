@@ -178,5 +178,3 @@ export function getJalaliDateTimeString(): string {
 export { gregorianToJalali, jalaliToGregorian };
 ```
 
-**فقط همین فایل رو جایگزین کن و Save بزن.**
-بعد دوباره Build بگیر و لاگ جدید رو بفرست. فعلاً هیچ فایل دیگه‌ای رو تغییر نده.
