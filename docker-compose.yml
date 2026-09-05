@@ -1,0 +1,52 @@
+# ═══════════════════════════════════════════════════════════════════
+# Arman Fleet - Docker Compose
+# Full stack: Backend API + PostgreSQL
+# ═══════════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ─── PostgreSQL Database ────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: arman-fleet-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: arman
+      POSTGRES_PASSWORD: arman_secret_123
+      POSTGRES_DB: arman_fleet
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U arman -d arman_fleet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Backend API ────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arman-fleet-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://arman:arman_secret_123@postgres:5432/arman_fleet
+      JWT_SECRET: change-this-to-a-strong-secret-in-production
+      JWT_EXPIRES_IN: 24h
+      CORS_ORIGIN: "*"
+      SUPABASE_URL: ""
+      SUPABASE_ANON_KEY: ""
+      SUPABASE_SERVICE_ROLE_KEY: ""
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
