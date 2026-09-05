@@ -51,22 +51,37 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/roster', rosterRoutes);
 
-// ── Serve Static Files ──────────────────────────────────────────────
-// In development (ts-node):  __dirname = src/
-// In production (Docker):    __dirname = dist/
-// The driver-app and web-admin-react are always at project root level,
-// so we resolve relative to the backend root (parent of src/ or dist/).
+// ── Static Files ────────────────────────────────────────────────────
+// Development:
+//   backend/src/app.ts
+//   projectRoot = ../../
+//
+// Production Docker:
+//   /app/dist/app.js
+//   projectRoot = /app
+const projectRoot =
+  config.nodeEnv === 'production'
+    ? path.resolve(__dirname, '..')
+    : path.resolve(__dirname, '../..');
 
-const backendRoot = path.resolve(__dirname, '..');
-const projectRoot = path.resolve(backendRoot, '..');
-
-// Driver App — available at /driver/
+// Driver App — /driver/
 const driverAppPath = path.join(projectRoot, 'driver-app');
 app.use('/driver', express.static(driverAppPath));
 
-// Web Admin React — available at /admin/
+// Web Admin — /admin/
 const webAdminPath = path.join(projectRoot, 'web-admin-react', 'dist');
 app.use('/admin', express.static(webAdminPath));
+
+// ── Admin Panel SPA fallback ────────────────────────────────────────
+app.get('/admin/*', (_req, res) => {
+  res.sendFile(path.join(webAdminPath, 'index.html'));
+});
+
+// ── Root ────────────────────────────────────────────────────────────
+// Open the admin panel when visiting the main domain.
+app.get('/', (_req, res) => {
+  res.redirect('/admin/');
+});
 
 // ── 404 Handler ─────────────────────────────────────────────────────
 app.use((_req, res) => {
