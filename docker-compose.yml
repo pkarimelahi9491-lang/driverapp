@@ -8,8 +8,8 @@ version: '3.8'
 services:
 
   # ─── PostgreSQL محلی ────────────────────────────────────────────
-  # فعلاً نگهش می‌داریم تا اطلاعات قبلی از بین نرود.
-  # Backend دیگر از این دیتابیس استفاده نمی‌کند.
+  # فعلاً نگه داشته شده تا دیتای قبلی حذف نشود.
+  # Backend از این دیتابیس استفاده نمی‌کند.
   postgres:
     image: postgres:16-alpine
     container_name: arman-fleet-db
@@ -35,7 +35,6 @@ services:
       dockerfile: Dockerfile
 
     container_name: arman-fleet-api
-
     restart: unless-stopped
 
     ports:
@@ -45,7 +44,7 @@ services:
       NODE_ENV: ${NODE_ENV}
       PORT: ${PORT}
 
-      # اتصال Prisma به PostgreSQL در Supabase
+      # PostgreSQL در Supabase
       DATABASE_URL: ${DATABASE_URL}
 
       # Supabase
@@ -58,10 +57,8 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN}
 
+      # CORS
       CORS_ORIGIN: ${CORS_ORIGIN}
-
-    # فعلاً وابستگی به PostgreSQL محلی را حذف می‌کنیم
-    # چون DATABASE_URL به Supabase اشاره می‌کند.
 
 volumes:
   pgdata:
