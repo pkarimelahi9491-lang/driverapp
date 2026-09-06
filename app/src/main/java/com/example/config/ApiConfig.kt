@@ -11,7 +11,7 @@ object ApiConfig {
     // ── Development (Local Backend) ──────────────────────────────
     // For Android Emulator: http://10.0.2.2:3000/api/
     // For Physical Device: http://YOUR_PC_IP:3000/api/
-    private const val LOCAL_BASE_URL = "http://10.0.2.2:3000/api/"
+    private const val BASE_URL = "https://armanlogestic.darkube.ir/api/"
 
     // ── Production (Cloud Backend) ───────────────────────────────
     // Option 1: Self-hosted backend on cloud (e.g., Railway, Render, Fly.io)
@@ -25,8 +25,7 @@ object ApiConfig {
 
     // ── Active Configuration ─────────────────────────────────────
     // Change this to CLOUD_BASE_URL when deploying to production
-    val BASE_URL = LOCAL_BASE_URL
-
+val BASE_URL = "https://armanlogestic.darkube.ir/api/"
     // ── Supabase Configuration (if using direct connection) ──────
     // Only needed if you want to bypass the backend and connect directly
     const val SUPABASE_URL = "" // Leave empty if not using direct connection
