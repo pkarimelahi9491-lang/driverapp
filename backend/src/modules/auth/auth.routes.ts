@@ -10,17 +10,26 @@ import { AppError } from '../../middleware/AppError';
 import { authenticate } from '../../middleware/auth';
 import { getJalaliDateTimeString } from '../../utils/persianDate';
 import { config } from '../../config/env';
+import { getSupabasePublic } from '../../config/supabase';
 
 const router = Router();
 
 /**
  * POST /api/auth/login
- * Login using PostgreSQL User table + bcrypt
+ * Login using Supabase Auth + PostgreSQL
  */
 router.post(
   '/login',
   asyncHandler(async (req, res) => {
-    const { username, password } = req.body;
+    const username = String(
+      req.body?.username || ''
+    )
+      .trim()
+      .toLowerCase();
+
+    const password = String(
+      req.body?.password || ''
+    );
 
     if (!username || !password) {
       throw AppError.badRequest(
@@ -28,39 +37,118 @@ router.post(
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { username },
-    });
+    let user = null;
+    let token: string | null = null;
 
-    if (!user) {
-      throw AppError.unauthorized(
-        'نام کاربری یا رمز عبور اشتباه است'
-      );
+    /**
+     * Try Supabase Auth first
+     *
+     * Example:
+     * d101 -> d101@arman-fleet.local
+     */
+    if (
+      config.supabaseUrl &&
+      config.supabaseAnonKey
+    ) {
+      try {
+        const supabase = getSupabasePublic();
+
+        const email =
+          `${username}@arman-fleet.local`;
+
+        const {
+          data,
+          error,
+        } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+        if (
+          !error &&
+          data.user &&
+          data.session?.access_token
+        ) {
+          token =
+            data.session.access_token;
+
+          user =
+            await prisma.user.findUnique({
+              where: {
+                id: data.user.id,
+              },
+              include: {
+                driver: true,
+              },
+            });
+        }
+      } catch (error) {
+        console.warn(
+          'Supabase authentication failed:',
+          error
+        );
+      }
     }
 
+    /**
+     * Fallback to old Prisma + bcrypt authentication
+     */
+    if (!user || !token) {
+      user =
+        await prisma.user.findUnique({
+          where: {
+            username,
+          },
+          include: {
+            driver: true,
+          },
+        });
+
+      if (!user) {
+        throw AppError.unauthorized(
+          'نام کاربری یا رمز عبور اشتباه است'
+        );
+      }
+
+      if (!user.isActive) {
+        throw AppError.forbidden(
+          'حساب کاربری شما غیرفعال شده است'
+        );
+      }
+
+      const isPasswordValid =
+        await bcrypt.compare(
+          password,
+          user.passwordHash
+        );
+
+      if (!isPasswordValid) {
+        throw AppError.unauthorized(
+          'نام کاربری یا رمز عبور اشتباه است'
+        );
+      }
+
+      token =
+        generateToken({
+          userId: user.id,
+          username: user.username,
+          role: user.role,
+        });
+    }
+
+    /**
+     * Check account status
+     */
     if (!user.isActive) {
       throw AppError.forbidden(
         'حساب کاربری شما غیرفعال شده است'
       );
     }
 
-    const isPasswordValid = await bcrypt.compare(
-      password,
-      user.passwordHash
-    );
-
-    if (!isPasswordValid) {
-      throw AppError.unauthorized(
-        'نام کاربری یا رمز عبور اشتباه است'
-      );
-    }
-
-    const token = generateToken({
-      userId: user.id,
-      username: user.username,
-      role: user.role,
-    });
-
+    /**
+     * Audit log
+     */
     await prisma.auditLog.create({
       data: {
         userId: user.id,
@@ -73,10 +161,14 @@ router.post(
           user.username +
           ' با نقش ' +
           user.role,
-        jalaliTimestamp: getJalaliDateTimeString(),
+        jalaliTimestamp:
+          getJalaliDateTimeString(),
       },
     });
 
+    /**
+     * Response
+     */
     res.json({
       success: true,
       data: {
@@ -129,9 +221,10 @@ router.post(
       ? role
       : 'DRIVER';
 
-    const existingUser = await prisma.user.findUnique({
-      where: { username },
-    });
+    const existingUser =
+      await prisma.user.findUnique({
+        where: { username },
+      });
 
     if (existingUser) {
       throw AppError.conflict(
@@ -139,10 +232,8 @@ router.post(
       );
     }
 
-    const passwordHash = await bcrypt.hash(
-      password,
-      12
-    );
+    const passwordHash =
+      await bcrypt.hash(password, 12);
 
     let supabaseUserId: string | null = null;
 
@@ -151,7 +242,8 @@ router.post(
       config.supabaseServiceRoleKey
     ) {
       const email =
-        username + '@arman-fleet.local';
+        username +
+        '@arman-fleet.local';
 
       const supabaseUser =
         await createSupabaseUser(
@@ -164,18 +256,20 @@ router.post(
         );
 
       if (supabaseUser) {
-        supabaseUserId = supabaseUser.id;
+        supabaseUserId =
+          supabaseUser.id;
       }
     }
 
-    const user = await prisma.user.create({
-      data: {
-        id: supabaseUserId || undefined,
-        username,
-        passwordHash,
-        role: userRole,
-      },
-    });
+    const user =
+      await prisma.user.create({
+        data: {
+          id: supabaseUserId || undefined,
+          username,
+          passwordHash,
+          role: userRole,
+        },
+      });
 
     const auditDetails =
       'ایجاد کاربر ' +
@@ -219,10 +313,15 @@ router.get(
   '/me',
   authenticate,
   asyncHandler(async (req, res) => {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user!.userId },
-      include: { driver: true },
-    });
+    const user =
+      await prisma.user.findUnique({
+        where: {
+          id: req.user!.userId,
+        },
+        include: {
+          driver: true,
+        },
+      });
 
     if (!user) {
       throw AppError.notFound(
