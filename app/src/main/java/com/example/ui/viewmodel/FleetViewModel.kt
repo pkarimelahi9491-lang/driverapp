@@ -67,7 +67,8 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedDate = MutableStateFlow(PersianDateHelper.getTodayJalali())
     val selectedDate: StateFlow<PersianDateHelper.JalaliDate> = _selectedDate.asStateFlow()
 
-    private val _selectedYearMonth = MutableStateFlow(PersianDateHelper.getTodayJalali().getYearMonthKey())
+    private val _selectedYearMonth =
+        MutableStateFlow(PersianDateHelper.getTodayJalali().getYearMonthKey())
     val selectedYearMonth: StateFlow<String> = _selectedYearMonth.asStateFlow()
 
     private val _currentDailyWork = MutableStateFlow<DailyWorkSummary?>(null)
@@ -77,13 +78,16 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
     val currentDailyTrips: StateFlow<List<Trip>> = _currentDailyTrips.asStateFlow()
 
     private val _monthlySettlements = MutableStateFlow<List<MonthlySettlementRow>>(emptyList())
-    val monthlySettlements: StateFlow<List<MonthlySettlementRow>> = _monthlySettlements.asStateFlow()
+    val monthlySettlements: StateFlow<List<MonthlySettlementRow>> =
+        _monthlySettlements.asStateFlow()
 
     private val _allApprovals = MutableStateFlow<List<PendingDailyApproval>>(emptyList())
     val allApprovals: StateFlow<List<PendingDailyApproval>> = _allApprovals.asStateFlow()
 
-    private val _auditLogs = MutableStateFlow<List<com.example.data.local.entity.AuditLogEntity>>(emptyList())
-    val auditLogs: StateFlow<List<com.example.data.local.entity.AuditLogEntity>> = _auditLogs.asStateFlow()
+    private val _auditLogs =
+        MutableStateFlow<List<com.example.data.local.entity.AuditLogEntity>>(emptyList())
+    val auditLogs: StateFlow<List<com.example.data.local.entity.AuditLogEntity>> =
+        _auditLogs.asStateFlow()
 
     // ── Login ──────────────────────────────────────────────────────
 
@@ -93,13 +97,24 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
             _loginError.value = null
 
             val result = repository.login(username, password)
-            result.onSuccess { (token, role) ->
-                authManager.saveAuth(token = token, userId = "", username = username, role = role)
+
+            result.onSuccess { loginResult ->
+
+                // ذخیره اطلاعات واقعی کاربر لاگین‌شده
+                authManager.saveAuth(
+                    token = loginResult.token,
+                    userId = loginResult.userId,
+                    username = loginResult.username,
+                    role = loginResult.role
+                )
+
                 _currentRole.value = authManager.getRole()
                 _isLoggedIn.value = true
+
                 loadInitialData()
+
             }.onFailure { e ->
-                _loginError.value = e.message
+                _loginError.value = e.message ?: "خطا در ورود"
             }
 
             _loginLoading.value = false
@@ -108,28 +123,56 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
 
     fun logout() {
         authManager.clearAuth()
+
         _isLoggedIn.value = false
         _currentRole.value = UserRole.DRIVER
+
         _selectedDriver.value = null
         _drivers.value = emptyList()
         _routes.value = emptyList()
         _locations.value = emptyList()
+        _currentDailyTrips.value = emptyList()
+        _currentDailyWork.value = null
+        _monthlySettlements.value = emptyList()
+        _allApprovals.value = emptyList()
+        _auditLogs.value = emptyList()
     }
 
     // ── Initial Data Loading ───────────────────────────────────────
 
     private fun loadInitialData() {
         viewModelScope.launch {
+
             // Load drivers
             repository.loadDrivers().onSuccess { list ->
+
                 _drivers.value = list
-                // Auto-select first driver or driver from auth
+
+                /*
+                 * اگر کاربر DRIVER باشد:
+                 *
+                 * اول تلاش می‌کنیم Driver را با driverId پیدا کنیم.
+                 * اگر driverId موجود نبود، با userId پیدا می‌کنیم.
+                 *
+                 * این قسمت مهم است چون قبلاً userId خالی ذخیره می‌شد
+                 * و در نتیجه اولین راننده لیست به اشتباه انتخاب می‌شد.
+                 */
                 val driverId = authManager.getDriverId()
-                val target = if (authManager.getRole() == UserRole.DRIVER && driverId != null) {
-                    list.find { it.id == driverId }
+                val userId = authManager.getUserId()
+
+                val target = if (authManager.getRole() == UserRole.DRIVER) {
+
+                    list.find { driver ->
+                        (driverId != null && driver.id == driverId) ||
+                        (userId.isNotBlank() && driver.userId == userId)
+                    }
+
                 } else {
+
+                    // برای ADMIN / FINANCE همان رفتار قبلی
                     list.firstOrNull()
                 }
+
                 if (target != null) {
                     _selectedDriver.value = target
                     refreshCurrentDailyWork()
@@ -137,17 +180,31 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
             }
 
             // Load locations & routes
-            repository.loadLocations().onSuccess { _locations.value = it }
-            repository.loadRoutes().onSuccess { _routes.value = it }
+            repository.loadLocations().onSuccess {
+                _locations.value = it
+            }
+
+            repository.loadRoutes().onSuccess {
+                _routes.value = it
+            }
 
             // Load admin data if admin
             if (_currentRole.value == UserRole.ADMIN) {
-                repository.loadAllDailyWorkApprovals().onSuccess { _allApprovals.value = it }
-                repository.loadAuditLogs().onSuccess { _auditLogs.value = it }
+
+                repository.loadAllDailyWorkApprovals().onSuccess {
+                    _allApprovals.value = it
+                }
+
+                repository.loadAuditLogs().onSuccess {
+                    _auditLogs.value = it
+                }
             }
 
             // Load settlements if finance/admin
-            if (_currentRole.value == UserRole.ADMIN || _currentRole.value == UserRole.FINANCE) {
+            if (
+                _currentRole.value == UserRole.ADMIN ||
+                _currentRole.value == UserRole.FINANCE
+            ) {
                 loadMonthlySettlements()
             }
         }
@@ -160,13 +217,20 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
         val dateStr = _selectedDate.value.formatStandard()
 
         viewModelScope.launch {
+
             // Load trips
-            repository.loadTripsForDriverAndDate(driver.id, dateStr).onSuccess { trips ->
+            repository.loadTripsForDriverAndDate(
+                driver.id,
+                dateStr
+            ).onSuccess { trips ->
                 _currentDailyTrips.value = trips
             }
 
             // Load daily work summary
-            repository.observeDailyWork(driver.id, dateStr).collect { summary ->
+            repository.observeDailyWork(
+                driver.id,
+                dateStr
+            ).collect { summary ->
                 _currentDailyWork.value = summary
             }
         }
@@ -174,14 +238,30 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
 
     fun refreshAllData() {
         viewModelScope.launch {
-            repository.loadDrivers().onSuccess { _drivers.value = it }
-            repository.loadRoutes().onSuccess { _routes.value = it }
-            repository.loadLocations().onSuccess { _locations.value = it }
+
+            repository.loadDrivers().onSuccess {
+                _drivers.value = it
+            }
+
+            repository.loadRoutes().onSuccess {
+                _routes.value = it
+            }
+
+            repository.loadLocations().onSuccess {
+                _locations.value = it
+            }
+
             refreshCurrentDailyWork()
 
             if (_currentRole.value == UserRole.ADMIN) {
-                repository.loadAllDailyWorkApprovals().onSuccess { _allApprovals.value = it }
-                repository.loadAuditLogs().onSuccess { _auditLogs.value = it }
+
+                repository.loadAllDailyWorkApprovals().onSuccess {
+                    _allApprovals.value = it
+                }
+
+                repository.loadAuditLogs().onSuccess {
+                    _auditLogs.value = it
+                }
             }
         }
     }
@@ -220,19 +300,40 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
         onError: (String) -> Unit
     ) {
         viewModelScope.launch {
-            val result = repository.registerTrip(driverId, jalaliDate, routeId, startTime, endTime, description)
+
+            val result = repository.registerTrip(
+                driverId,
+                jalaliDate,
+                routeId,
+                startTime,
+                endTime,
+                description
+            )
+
             result.onSuccess {
                 refreshCurrentDailyWork()
                 onSuccess()
-            }.onFailure { onError(it.message ?: "خطا در ثبت سفر") }
+            }.onFailure {
+                onError(it.message ?: "خطا در ثبت سفر")
+            }
         }
     }
 
-    fun deleteTrip(trip: Trip, onError: (String) -> Unit) {
+    fun deleteTrip(
+        trip: Trip,
+        onError: (String) -> Unit
+    ) {
         viewModelScope.launch {
+
             val result = repository.deleteTrip(trip.id)
-            result.onSuccess { refreshCurrentDailyWork() }
-            result.onFailure { onError(it.message ?: "خطا در حذف سفر") }
+
+            result.onSuccess {
+                refreshCurrentDailyWork()
+            }
+
+            result.onFailure {
+                onError(it.message ?: "خطا در حذف سفر")
+            }
         }
     }
 
@@ -245,41 +346,91 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
         onError: (String) -> Unit
     ) {
         viewModelScope.launch {
-            val result = repository.submitDailyWork(driverId, jalaliDate)
+
+            val result = repository.submitDailyWork(
+                driverId,
+                jalaliDate
+            )
+
             result.onSuccess {
                 refreshCurrentDailyWork()
                 onSuccess()
-            }.onFailure { onError(it.message ?: "خطا در ارسال کارکرد") }
+            }.onFailure {
+                onError(it.message ?: "خطا در ارسال کارکرد")
+            }
         }
     }
 
-    fun approveDailyWork(dailyWorkId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun approveDailyWork(
+        dailyWorkId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
         viewModelScope.launch {
+
             val result = repository.approveDailyWork(dailyWorkId)
+
             result.onSuccess {
-                repository.loadAllDailyWorkApprovals().onSuccess { _allApprovals.value = it }
+
+                repository.loadAllDailyWorkApprovals().onSuccess {
+                    _allApprovals.value = it
+                }
+
                 onSuccess()
-            }.onFailure { onError(it.message ?: "خطا در تأیید") }
+
+            }.onFailure {
+                onError(it.message ?: "خطا در تأیید")
+            }
         }
     }
 
-    fun rejectDailyWork(dailyWorkId: String, reason: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun rejectDailyWork(
+        dailyWorkId: String,
+        reason: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
         viewModelScope.launch {
-            val result = repository.rejectDailyWork(dailyWorkId, reason)
+
+            val result = repository.rejectDailyWork(
+                dailyWorkId,
+                reason
+            )
+
             result.onSuccess {
-                repository.loadAllDailyWorkApprovals().onSuccess { _allApprovals.value = it }
+
+                repository.loadAllDailyWorkApprovals().onSuccess {
+                    _allApprovals.value = it
+                }
+
                 onSuccess()
-            }.onFailure { onError(it.message ?: "خطا در رد") }
+
+            }.onFailure {
+                onError(it.message ?: "خطا در رد")
+            }
         }
     }
 
-    fun unlockDailyWork(dailyWorkId: String, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun unlockDailyWork(
+        dailyWorkId: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
         viewModelScope.launch {
+
             val result = repository.unlockDailyWork(dailyWorkId)
+
             result.onSuccess {
-                repository.loadAllDailyWorkApprovals().onSuccess { _allApprovals.value = it }
+
+                repository.loadAllDailyWorkApprovals().onSuccess {
+                    _allApprovals.value = it
+                }
+
                 onSuccess()
-            }.onFailure { onError(it.message ?: "خطا در بازگشایی") }
+
+            }.onFailure {
+                onError(it.message ?: "خطا در بازگشایی")
+            }
         }
     }
 
@@ -287,6 +438,7 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
 
     fun saveDriver(driver: Driver) {
         viewModelScope.launch {
+
             val request = CreateDriverRequest(
                 fullName = driver.fullName,
                 driverCode = driver.driverCode,
@@ -297,14 +449,19 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
                 joinDateJalali = driver.joinDateJalali,
                 description = driver.description
             )
+
             repository.saveDriver(request).onSuccess {
                 refreshAllData()
             }
         }
     }
 
-    fun toggleDriverStatus(driverId: String, currentStatus: Boolean) {
+    fun toggleDriverStatus(
+        driverId: String,
+        currentStatus: Boolean
+    ) {
         viewModelScope.launch {
+
             repository.toggleDriverStatus(driverId).onSuccess {
                 refreshAllData()
             }
@@ -322,7 +479,10 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
         description: String
     ) {
         viewModelScope.launch {
-            repository.loadRoutes().onSuccess { _routes.value = it }
+
+            repository.loadRoutes().onSuccess {
+                _routes.value = it
+            }
         }
     }
 
@@ -330,28 +490,49 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun loadMonthlySettlements() {
         viewModelScope.launch {
-            repository.getMonthlySettlement(_selectedYearMonth.value).onSuccess {
+
+            repository.getMonthlySettlement(
+                _selectedYearMonth.value
+            ).onSuccess {
                 _monthlySettlements.value = it
             }
         }
     }
 
-    fun updatePaymentStatus(newStatus: com.example.domain.model.PaymentStatus) {
+    fun updatePaymentStatus(
+        newStatus: com.example.domain.model.PaymentStatus
+    ) {
         viewModelScope.launch {
+
             // API call would go here
             loadMonthlySettlements()
         }
     }
 
-    fun exportMonthlyCsv(periodTitle: String, rows: List<MonthlySettlementRow>): String {
+    fun exportMonthlyCsv(
+        periodTitle: String,
+        rows: List<MonthlySettlementRow>
+    ): String {
+
         val builder = StringBuilder()
+
         builder.append("\uFEFF")
         builder.append("گزارش کارکرد رانندگان هلدینگ آرمان انتخاب\n")
         builder.append("دوره: $periodTitle\n\n")
         builder.append("ردیف,نام,کد,پرسنلی,روز,سفر,مبلغ\n")
+
         rows.forEachIndexed { i, r ->
-            builder.append("${i + 1},\"${r.driverName}\",${r.driverCode},${r.personnelCode},${r.workingDaysCount},${r.totalTripsCount},${r.finalizedIncome}\n")
+
+            builder.append(
+                "${i + 1},\"${r.driverName}\"," +
+                "${r.driverCode}," +
+                "${r.personnelCode}," +
+                "${r.workingDaysCount}," +
+                "${r.totalTripsCount}," +
+                "${r.finalizedIncome}\n"
+            )
         }
+
         return builder.toString()
     }
 }
