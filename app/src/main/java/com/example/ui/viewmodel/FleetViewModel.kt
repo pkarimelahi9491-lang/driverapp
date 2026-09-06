@@ -43,7 +43,6 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
     private val _loginLoading = MutableStateFlow(false)
     val loginLoading: StateFlow<Boolean> = _loginLoading.asStateFlow()
 
-    // Active User Role
     private val _currentRole = MutableStateFlow(authManager.getRole())
     val currentRole: StateFlow<UserRole> = _currentRole.asStateFlow()
 
@@ -61,31 +60,43 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedDriver = MutableStateFlow<Driver?>(null)
     val selectedDriver: StateFlow<Driver?> = _selectedDriver.asStateFlow()
 
-    private val _driverDetail = MutableStateFlow<DriverDetail?>(null)
-    val driverDetail: StateFlow<DriverDetail?> = _driverDetail.asStateFlow()
-
-    private val _selectedDate = MutableStateFlow(PersianDateHelper.getTodayJalali())
-    val selectedDate: StateFlow<PersianDateHelper.JalaliDate> = _selectedDate.asStateFlow()
+    private val _selectedDate =
+        MutableStateFlow(PersianDateHelper.getTodayJalali())
+    val selectedDate: StateFlow<PersianDateHelper.JalaliDate> =
+        _selectedDate.asStateFlow()
 
     private val _selectedYearMonth =
-        MutableStateFlow(PersianDateHelper.getTodayJalali().getYearMonthKey())
-    val selectedYearMonth: StateFlow<String> = _selectedYearMonth.asStateFlow()
+        MutableStateFlow(
+            PersianDateHelper.getTodayJalali().getYearMonthKey()
+        )
+    val selectedYearMonth: StateFlow<String> =
+        _selectedYearMonth.asStateFlow()
 
-    private val _currentDailyWork = MutableStateFlow<DailyWorkSummary?>(null)
-    val currentDailyWork: StateFlow<DailyWorkSummary?> = _currentDailyWork.asStateFlow()
+    private val _currentDailyWork =
+        MutableStateFlow<DailyWorkSummary?>(null)
+    val currentDailyWork: StateFlow<DailyWorkSummary?> =
+        _currentDailyWork.asStateFlow()
 
-    private val _currentDailyTrips = MutableStateFlow<List<Trip>>(emptyList())
-    val currentDailyTrips: StateFlow<List<Trip>> = _currentDailyTrips.asStateFlow()
+    private val _currentDailyTrips =
+        MutableStateFlow<List<Trip>>(emptyList())
+    val currentDailyTrips: StateFlow<List<Trip>> =
+        _currentDailyTrips.asStateFlow()
 
-    private val _monthlySettlements = MutableStateFlow<List<MonthlySettlementRow>>(emptyList())
+    private val _monthlySettlements =
+        MutableStateFlow<List<MonthlySettlementRow>>(emptyList())
     val monthlySettlements: StateFlow<List<MonthlySettlementRow>> =
         _monthlySettlements.asStateFlow()
 
-    private val _allApprovals = MutableStateFlow<List<PendingDailyApproval>>(emptyList())
-    val allApprovals: StateFlow<List<PendingDailyApproval>> = _allApprovals.asStateFlow()
+    private val _allApprovals =
+        MutableStateFlow<List<PendingDailyApproval>>(emptyList())
+    val allApprovals: StateFlow<List<PendingDailyApproval>> =
+        _allApprovals.asStateFlow()
 
     private val _auditLogs =
-        MutableStateFlow<List<com.example.data.local.entity.AuditLogEntity>>(emptyList())
+        MutableStateFlow<List<com.example.data.local.entity.AuditLogEntity>>(
+            emptyList()
+        )
+
     val auditLogs: StateFlow<List<com.example.data.local.entity.AuditLogEntity>> =
         _auditLogs.asStateFlow()
 
@@ -100,7 +111,6 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
 
             result.onSuccess { loginResult ->
 
-                // ذخیره اطلاعات واقعی کاربر لاگین‌شده
                 authManager.saveAuth(
                     token = loginResult.token,
                     userId = loginResult.userId,
@@ -143,22 +153,12 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
     private fun loadInitialData() {
         viewModelScope.launch {
 
-            // Load drivers
             repository.loadDrivers().onSuccess { list ->
 
                 _drivers.value = list
 
-                /*
-                 * اگر کاربر DRIVER باشد:
-                 *
-                 * اول تلاش می‌کنیم Driver را با driverId پیدا کنیم.
-                 * اگر driverId موجود نبود، با userId پیدا می‌کنیم.
-                 *
-                 * این قسمت مهم است چون قبلاً userId خالی ذخیره می‌شد
-                 * و در نتیجه اولین راننده لیست به اشتباه انتخاب می‌شد.
-                 */
                 val driverId = authManager.getDriverId()
-                val userId = authManager.getUserId()
+                val userId = authManager.getUserId().orEmpty()
 
                 val target = if (authManager.getRole() == UserRole.DRIVER) {
 
@@ -168,8 +168,6 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
                     }
 
                 } else {
-
-                    // برای ADMIN / FINANCE همان رفتار قبلی
                     list.firstOrNull()
                 }
 
@@ -179,7 +177,6 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            // Load locations & routes
             repository.loadLocations().onSuccess {
                 _locations.value = it
             }
@@ -188,7 +185,6 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
                 _routes.value = it
             }
 
-            // Load admin data if admin
             if (_currentRole.value == UserRole.ADMIN) {
 
                 repository.loadAllDailyWorkApprovals().onSuccess {
@@ -200,7 +196,6 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            // Load settlements if finance/admin
             if (
                 _currentRole.value == UserRole.ADMIN ||
                 _currentRole.value == UserRole.FINANCE
@@ -218,7 +213,6 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
 
-            // Load trips
             repository.loadTripsForDriverAndDate(
                 driver.id,
                 dateStr
@@ -226,7 +220,6 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
                 _currentDailyTrips.value = trips
             }
 
-            // Load daily work summary
             repository.observeDailyWork(
                 driver.id,
                 dateStr
@@ -503,8 +496,6 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
         newStatus: com.example.domain.model.PaymentStatus
     ) {
         viewModelScope.launch {
-
-            // API call would go here
             loadMonthlySettlements()
         }
     }
