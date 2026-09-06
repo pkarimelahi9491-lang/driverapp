@@ -10,11 +10,11 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,7 +60,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MyApplicationTheme {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                CompositionLocalProvider(
+                    LocalLayoutDirection provides LayoutDirection.Rtl
+                ) {
                     FleetApp(viewModel = viewModel)
                 }
             }
@@ -90,7 +92,6 @@ fun FleetApp(viewModel: FleetViewModel) {
 
     var currentScreen by remember { mutableStateOf(ScreenRoute.LOGIN) }
 
-    // Auto-navigate when logged in
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
             currentScreen = when (currentRole) {
@@ -103,17 +104,17 @@ fun FleetApp(viewModel: FleetViewModel) {
         }
     }
 
-    // Login Screen
     if (!isLoggedIn || currentScreen == ScreenRoute.LOGIN) {
         LoginScreen(
-            onLogin = { username, password -> viewModel.login(username, password) },
+            onLogin = { username, password ->
+                viewModel.login(username, password)
+            },
             isLoading = loginLoading,
             error = loginError
         )
         return
     }
 
-    // Main App
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {
@@ -122,15 +123,17 @@ fun FleetApp(viewModel: FleetViewModel) {
                 driverName = selectedDriver?.fullName ?: "راننده هلدینگ",
                 onSwitchRole = { newRole ->
                     viewModel.setRole(newRole)
-                    when (newRole) {
-                        UserRole.DRIVER -> currentScreen = ScreenRoute.DRIVER_HOME
-                        UserRole.ADMIN -> currentScreen = ScreenRoute.ADMIN_DASHBOARD
-                        UserRole.FINANCE -> currentScreen = ScreenRoute.ADMIN_FINANCE
+
+                    currentScreen = when (newRole) {
+                        UserRole.DRIVER -> ScreenRoute.DRIVER_HOME
+                        UserRole.ADMIN -> ScreenRoute.ADMIN_DASHBOARD
+                        UserRole.FINANCE -> ScreenRoute.ADMIN_FINANCE
                     }
                 }
             )
         }
     ) { innerPadding ->
+
         AmbientGlassBackdrop(
             modifier = Modifier
                 .fillMaxSize()
@@ -138,38 +141,67 @@ fun FleetApp(viewModel: FleetViewModel) {
         ) {
             AnimatedContent(
                 targetState = currentScreen,
-                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                },
                 label = "ScreenTransition"
             ) { screen ->
+
                 when (screen) {
-                    ScreenRoute.LOGIN -> { /* Handled above */ }
+
+                    ScreenRoute.LOGIN -> {
+                        // Handled above
+                    }
 
                     ScreenRoute.DRIVER_HOME -> {
-                        val activeDriver = selectedDriver ?: allDrivers.firstOrNull()
+                        val activeDriver =
+                            selectedDriver ?: allDrivers.firstOrNull()
+
                         if (activeDriver != null) {
                             DriverHomeScreen(
                                 driver = activeDriver,
                                 selectedDate = selectedDate,
                                 dailyWork = currentDailyWork,
                                 todayTrips = currentDailyTrips,
-                                monthlyIncome = 0L, // Will be loaded from API
+                                monthlyIncome = 0L,
                                 allDrivers = allDrivers,
-                                onSelectDriver = { viewModel.selectDriver(it) },
-                                onSelectDate = { viewModel.selectDate(it) },
-                                onRegisterNewTripClick = { currentScreen = ScreenRoute.DRIVER_REGISTER_TRIP },
+                                onSelectDriver = {
+                                    viewModel.selectDriver(it)
+                                },
+                                onSelectDate = {
+                                    viewModel.selectDate(it)
+                                },
+                                onRegisterNewTripClick = {
+                                    currentScreen =
+                                        ScreenRoute.DRIVER_REGISTER_TRIP
+                                },
                                 onFinalizeDayClick = {
                                     viewModel.submitDailyWorkForApproval(
                                         driverId = activeDriver.id,
                                         jalaliDate = selectedDate.formatStandard(),
                                         onSuccess = {
-                                            Toast.makeText(context, "کارکرد ارسال شد.", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                context,
+                                                "کارکرد ارسال شد.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         },
-                                        onError = { msg -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show() }
+                                        onError = { msg ->
+                                            Toast.makeText(
+                                                context,
+                                                msg,
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
                                     )
                                 },
                                 onDeleteTripClick = { trip ->
                                     viewModel.deleteTrip(trip) { err ->
-                                        Toast.makeText(context, err, Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            err,
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
                                 }
                             )
@@ -177,15 +209,27 @@ fun FleetApp(viewModel: FleetViewModel) {
                     }
 
                     ScreenRoute.DRIVER_REGISTER_TRIP -> {
-                        val activeDriver = selectedDriver ?: allDrivers.firstOrNull()
+                        val activeDriver =
+                            selectedDriver ?: allDrivers.firstOrNull()
+
                         if (activeDriver != null) {
                             RegisterTripScreen(
                                 driver = activeDriver,
                                 initialDate = selectedDate,
                                 locations = activeLocations,
                                 allRoutes = allRoutes,
-                                onNavigateBack = { currentScreen = ScreenRoute.DRIVER_HOME },
-                                onSubmitTrip = { driverId, jalaliDate, routeId, startTime, endTime, description ->
+                                onNavigateBack = {
+                                    currentScreen =
+                                        ScreenRoute.DRIVER_HOME
+                                },
+                                onSubmitTrip = {
+                                        driverId,
+                                        jalaliDate,
+                                        routeId,
+                                        startTime,
+                                        endTime,
+                                        description ->
+
                                     viewModel.registerTrip(
                                         driverId = driverId,
                                         jalaliDate = jalaliDate,
@@ -194,10 +238,22 @@ fun FleetApp(viewModel: FleetViewModel) {
                                         endTime = endTime,
                                         description = description,
                                         onSuccess = {
-                                            Toast.makeText(context, "سفر ثبت شد.", Toast.LENGTH_SHORT).show()
-                                            currentScreen = ScreenRoute.DRIVER_HOME
+                                            Toast.makeText(
+                                                context,
+                                                "سفر ثبت شد.",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+
+                                            currentScreen =
+                                                ScreenRoute.DRIVER_HOME
                                         },
-                                        onError = { msg -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show() }
+                                        onError = { msg ->
+                                            Toast.makeText(
+                                                context,
+                                                msg,
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
                                     )
                                 }
                             )
@@ -210,28 +266,91 @@ fun FleetApp(viewModel: FleetViewModel) {
                             routes = allRoutes,
                             settlementRows = monthlySettlements,
                             allApprovals = allApprovals,
+
                             onApproveDailyWork = { dailyWorkId, _ ->
-                                viewModel.approveDailyWork(dailyWorkId,
-                                    onSuccess = { Toast.makeText(context, "تأیید شد.", Toast.LENGTH_SHORT).show() },
-                                    onError = { msg -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show() }
+                                viewModel.approveDailyWork(
+                                    dailyWorkId,
+                                    onSuccess = {
+                                        Toast.makeText(
+                                            context,
+                                            "تأیید شد.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    onError = { msg ->
+                                        Toast.makeText(
+                                            context,
+                                            msg,
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
                                 )
                             },
-                            onRejectDailyWork = { dailyWorkId, reason, _ ->
-                                viewModel.rejectDailyWork(dailyWorkId, reason,
-                                    onSuccess = { Toast.makeText(context, "رد شد.", Toast.LENGTH_SHORT).show() },
-                                    onError = { msg -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show() }
+
+                            onRejectDailyWork = {
+                                    dailyWorkId,
+                                    reason,
+                                    _ ->
+
+                                viewModel.rejectDailyWork(
+                                    dailyWorkId,
+                                    reason,
+                                    onSuccess = {
+                                        Toast.makeText(
+                                            context,
+                                            "رد شد.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    onError = { msg ->
+                                        Toast.makeText(
+                                            context,
+                                            msg,
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
                                 )
                             },
+
                             onUnlockDailyWork = { dailyWorkId, _ ->
-                                viewModel.unlockDailyWork(dailyWorkId,
-                                    onSuccess = { Toast.makeText(context, "بازگشایی شد.", Toast.LENGTH_SHORT).show() },
-                                    onError = { msg -> Toast.makeText(context, msg, Toast.LENGTH_LONG).show() }
+                                viewModel.unlockDailyWork(
+                                    dailyWorkId,
+                                    onSuccess = {
+                                        Toast.makeText(
+                                            context,
+                                            "بازگشایی شد.",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    },
+                                    onError = { msg ->
+                                        Toast.makeText(
+                                            context,
+                                            msg,
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
                                 )
                             },
-                            onNavigateToRoutes = { currentScreen = ScreenRoute.ADMIN_ROUTES },
-                            onNavigateToDrivers = { currentScreen = ScreenRoute.ADMIN_DRIVERS },
-                            onNavigateToFinance = { currentScreen = ScreenRoute.ADMIN_FINANCE },
-                            onNavigateToAuditLogs = { currentScreen = ScreenRoute.ADMIN_AUDIT_LOGS }
+
+                            onNavigateToRoutes = {
+                                currentScreen =
+                                    ScreenRoute.ADMIN_ROUTES
+                            },
+
+                            onNavigateToDrivers = {
+                                currentScreen =
+                                    ScreenRoute.ADMIN_DRIVERS
+                            },
+
+                            onNavigateToFinance = {
+                                currentScreen =
+                                    ScreenRoute.ADMIN_FINANCE
+                            },
+
+                            onNavigateToAuditLogs = {
+                                currentScreen =
+                                    ScreenRoute.ADMIN_AUDIT_LOGS
+                            }
                         )
                     }
 
@@ -239,11 +358,40 @@ fun FleetApp(viewModel: FleetViewModel) {
                         AdminRoutesScreen(
                             routes = allRoutes,
                             locations = activeLocations,
-                            onNavigateBack = { currentScreen = ScreenRoute.ADMIN_DASHBOARD },
-                            onSaveRoute = { routeId, routeCode, originId, originName, destId, destName, price, desc ->
-                                viewModel.saveRoute(routeId, routeCode, originId, originName, destId, destName, price, desc)
-                                Toast.makeText(context, "ذخیره شد.", Toast.LENGTH_SHORT).show()
+
+                            onNavigateBack = {
+                                currentScreen =
+                                    ScreenRoute.ADMIN_DASHBOARD
                             },
+
+                            onSaveRoute = {
+                                    routeId,
+                                    routeCode,
+                                    originId,
+                                    originName,
+                                    destId,
+                                    destName,
+                                    price,
+                                    desc ->
+
+                                viewModel.saveRoute(
+                                    routeId,
+                                    routeCode,
+                                    originId,
+                                    originName,
+                                    destId,
+                                    destName,
+                                    price,
+                                    desc
+                                )
+
+                                Toast.makeText(
+                                    context,
+                                    "ذخیره شد.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
+
                             onSyncCsv = { }
                         )
                     }
@@ -251,13 +399,30 @@ fun FleetApp(viewModel: FleetViewModel) {
                     ScreenRoute.ADMIN_DRIVERS -> {
                         AdminDriversScreen(
                             drivers = allDrivers,
-                            onNavigateBack = { currentScreen = ScreenRoute.ADMIN_DASHBOARD },
+
+                            onNavigateBack = {
+                                currentScreen =
+                                    ScreenRoute.ADMIN_DASHBOARD
+                            },
+
                             onSaveDriver = { driver ->
                                 viewModel.saveDriver(driver)
-                                Toast.makeText(context, "ذخیره شد.", Toast.LENGTH_SHORT).show()
+
+                                Toast.makeText(
+                                    context,
+                                    "ذخیره شد.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             },
-                            onToggleActive = { driverId, currentStatus ->
-                                viewModel.toggleDriverStatus(driverId, currentStatus)
+
+                            onToggleActive = {
+                                    driverId,
+                                    currentStatus ->
+
+                                viewModel.toggleDriverStatus(
+                                    driverId,
+                                    currentStatus
+                                )
                             }
                         )
                     }
@@ -266,14 +431,31 @@ fun FleetApp(viewModel: FleetViewModel) {
                         FinanceReportScreen(
                             currentYearMonth = selectedYearMonth,
                             settlementRows = monthlySettlements,
-                            onNavigateBack = { currentScreen = ScreenRoute.ADMIN_DASHBOARD },
-                            onYearMonthChange = { viewModel.selectYearMonth(it) },
+
+                            onNavigateBack = {
+                                currentScreen =
+                                    ScreenRoute.ADMIN_DASHBOARD
+                            },
+
+                            onYearMonthChange = {
+                                viewModel.selectYearMonth(it)
+                            },
+
                             onUpdatePaymentStatus = { status ->
                                 viewModel.updatePaymentStatus(status)
-                                Toast.makeText(context, "وضعیت تغییر کرد.", Toast.LENGTH_SHORT).show()
+
+                                Toast.makeText(
+                                    context,
+                                    "وضعیت تغییر کرد.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             },
+
                             onExportCsv = { periodTitle, rows ->
-                                viewModel.exportMonthlyCsv(periodTitle, rows)
+                                viewModel.exportMonthlyCsv(
+                                    periodTitle,
+                                    rows
+                                )
                             }
                         )
                     }
@@ -281,7 +463,11 @@ fun FleetApp(viewModel: FleetViewModel) {
                     ScreenRoute.ADMIN_AUDIT_LOGS -> {
                         AuditLogsScreen(
                             auditLogs = auditLogs,
-                            onNavigateBack = { currentScreen = ScreenRoute.ADMIN_DASHBOARD }
+
+                            onNavigateBack = {
+                                currentScreen =
+                                    ScreenRoute.ADMIN_DASHBOARD
+                            }
                         )
                     }
                 }
