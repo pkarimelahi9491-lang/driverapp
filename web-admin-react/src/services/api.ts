@@ -31,21 +31,21 @@ class ApiClient {
     return data;
   }
 
-  // Auth
-  async login(username: string, password: string) {
-    const response = await this.request<{
-      success: boolean;
-      data: {
-        token: string;
-        user: any;
-      };
-    }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password }),
-    });
+// Auth
+async login(username: string, password: string) {
+  const response = await this.request<{
+    success: boolean;
+    data: {
+      token: string;
+      user: any;
+    };
+  }>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username, password }),
+  });
 
-    return response.data;
-  }
+  return response.data;
+}
 
   async getMe() {
     return this.request<any>('/auth/me');
