@@ -7,8 +7,8 @@ class ApiClient {
     this.token = token;
   }
 
-async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const headers: Record<string, string> = {
+  async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
@@ -33,10 +33,18 @@ async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
 
   // Auth
   async login(username: string, password: string) {
-    return this.request<{ token: string; user: any }>('/auth/login', {
+    const response = await this.request<{
+      success: boolean;
+      data: {
+        token: string;
+        user: any;
+      };
+    }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     });
+
+    return response.data;
   }
 
   async getMe() {
@@ -54,19 +62,29 @@ async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   }
 
   async createDriver(data: any) {
-    return this.request<any>('/drivers', { method: 'POST', body: JSON.stringify(data) });
+    return this.request<any>('/drivers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async updateDriver(id: string, data: any) {
-    return this.request<any>(`/drivers/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request<any>(`/drivers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 
   async toggleDriver(id: string) {
-    return this.request<any>(`/drivers/${id}/toggle`, { method: 'PATCH' });
+    return this.request<any>(`/drivers/${id}/toggle`, {
+      method: 'PATCH',
+    });
   }
 
   async deleteDriver(id: string) {
-    return this.request<any>(`/drivers/${id}`, { method: 'DELETE' });
+    return this.request<any>(`/drivers/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   async getDriverTrips(id: string, params?: Record<string, string>) {
@@ -92,23 +110,36 @@ async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   }
 
   async createRoute(data: any) {
-    return this.request<any>('/routes', { method: 'POST', body: JSON.stringify(data) });
+    return this.request<any>('/routes', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async updateRoute(id: string, data: any) {
-    return this.request<any>(`/routes/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+    return this.request<any>(`/routes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   }
 
   async updateRoutePrice(id: string, price: number) {
-    return this.request<any>(`/routes/${id}/price`, { method: 'PUT', body: JSON.stringify({ price }) });
+    return this.request<any>(`/routes/${id}/price`, {
+      method: 'PUT',
+      body: JSON.stringify({ price }),
+    });
   }
 
   async toggleRoute(id: string) {
-    return this.request<any>(`/routes/${id}/toggle`, { method: 'PATCH' });
+    return this.request<any>(`/routes/${id}/toggle`, {
+      method: 'PATCH',
+    });
   }
 
   async deleteRoute(id: string) {
-    return this.request<any>(`/routes/${id}`, { method: 'DELETE' });
+    return this.request<any>(`/routes/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   async getRoutePriceHistory(id: string) {
@@ -116,7 +147,10 @@ async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   }
 
   async syncCsvRoutes(csvText?: string) {
-    return this.request<any>('/routes/sync-csv', { method: 'POST', body: JSON.stringify({ csvText }) });
+    return this.request<any>('/routes/sync-csv', {
+      method: 'POST',
+      body: JSON.stringify({ csvText }),
+    });
   }
 
   // Trips
@@ -132,15 +166,22 @@ async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   }
 
   async approveDailyWork(id: string) {
-    return this.request<any>(`/daily-work/${id}/approve`, { method: 'POST' });
+    return this.request<any>(`/daily-work/${id}/approve`, {
+      method: 'POST',
+    });
   }
 
   async rejectDailyWork(id: string, reason: string) {
-    return this.request<any>(`/daily-work/${id}/reject`, { method: 'POST', body: JSON.stringify({ reason }) });
+    return this.request<any>(`/daily-work/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
   }
 
   async unlockDailyWork(id: string) {
-    return this.request<any>(`/daily-work/${id}/unlock`, { method: 'POST' });
+    return this.request<any>(`/daily-work/${id}/unlock`, {
+      method: 'POST',
+    });
   }
 
   // Finance
@@ -149,13 +190,22 @@ async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   }
 
   async updateFinancialStatus(yearMonth: string, status: string) {
-    return this.request<any>(`/finance/${yearMonth}/status`, { method: 'PUT', body: JSON.stringify({ status }) });
+    return this.request<any>(`/finance/${yearMonth}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
   }
 
   async exportCsv(yearMonth: string) {
-    const response = await fetch(`${API_BASE}/finance/export/csv?yearMonth=${yearMonth}`, {
-      headers: { Authorization: `Bearer ${this.token}` },
-    });
+    const response = await fetch(
+      `${API_BASE}/finance/export/csv?yearMonth=${yearMonth}`,
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+      }
+    );
+
     return response.text();
   }
 
@@ -178,7 +228,11 @@ async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     });
   }
 
-  async toggleDriverRoster(yearMonth: string, driverId: string, isActive: boolean) {
+  async toggleDriverRoster(
+    yearMonth: string,
+    driverId: string,
+    isActive: boolean
+  ) {
     return this.request<any>(`/roster/${yearMonth}/${driverId}/toggle`, {
       method: 'PUT',
       body: JSON.stringify({ isActive }),
