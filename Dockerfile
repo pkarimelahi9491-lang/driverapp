@@ -4,7 +4,7 @@
 # ═══════════════════════════════════════════════════════════════════
 
 # ─── Stage 1: Build Web Admin ─────────────────────────────────────
-FROM node:20-alpine AS web-admin-builder
+FROM node:22-alpine AS web-admin-builder
 
 WORKDIR /web-admin
 COPY web-admin-react/package*.json ./
@@ -13,7 +13,7 @@ COPY web-admin-react/ ./
 RUN npm run build
 
 # ─── Stage 2: Build Backend ────────────────────────────────────────
-FROM node:20-alpine AS backend-builder
+FROM node:22-alpine AS backend-builder
 
 WORKDIR /app
 
@@ -38,7 +38,7 @@ COPY backend/src ./src/
 RUN npx tsc
 
 # ─── Stage 3: Production Runner ────────────────────────────────────
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
