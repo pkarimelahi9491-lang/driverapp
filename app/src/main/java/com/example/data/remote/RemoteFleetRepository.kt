@@ -97,8 +97,12 @@ class RemoteFleetRepository(private val api: ApiService) {
                     Result.failure(Exception("راننده یافت نشد"))
                 }
             } catch (e: Exception) {
-                Result.failure(Exception("ارتباط با سرور برقرار نیست"))
-            }
+    Result.failure(
+        Exception(
+            "خطای اتصال: ${e.javaClass.simpleName} - ${e.message}"
+        )
+    )
+}
         }
 
     // ── Locations ──────────────────────────────────────────────────
