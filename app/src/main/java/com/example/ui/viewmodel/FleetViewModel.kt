@@ -62,6 +62,7 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _selectedDate =
         MutableStateFlow(PersianDateHelper.getTodayJalali())
+
     val selectedDate: StateFlow<PersianDateHelper.JalaliDate> =
         _selectedDate.asStateFlow()
 
@@ -69,26 +70,31 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
         MutableStateFlow(
             PersianDateHelper.getTodayJalali().getYearMonthKey()
         )
+
     val selectedYearMonth: StateFlow<String> =
         _selectedYearMonth.asStateFlow()
 
     private val _currentDailyWork =
         MutableStateFlow<DailyWorkSummary?>(null)
+
     val currentDailyWork: StateFlow<DailyWorkSummary?> =
         _currentDailyWork.asStateFlow()
 
     private val _currentDailyTrips =
         MutableStateFlow<List<Trip>>(emptyList())
+
     val currentDailyTrips: StateFlow<List<Trip>> =
         _currentDailyTrips.asStateFlow()
 
     private val _monthlySettlements =
         MutableStateFlow<List<MonthlySettlementRow>>(emptyList())
+
     val monthlySettlements: StateFlow<List<MonthlySettlementRow>> =
         _monthlySettlements.asStateFlow()
 
     private val _allApprovals =
         MutableStateFlow<List<PendingDailyApproval>>(emptyList())
+
     val allApprovals: StateFlow<List<PendingDailyApproval>> =
         _allApprovals.asStateFlow()
 
@@ -97,7 +103,8 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
             emptyList()
         )
 
-    val auditLogs: StateFlow<List<com.example.data.local.entity.AuditLogEntity>> =
+    val auditLogs:
+            StateFlow<List<com.example.data.local.entity.AuditLogEntity>> =
         _auditLogs.asStateFlow()
 
     // ── Login ──────────────────────────────────────────────────────
@@ -112,10 +119,10 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
             result.onSuccess { loginResult ->
 
                 authManager.saveAuth(
-                    token = loginResult.token,
-                    userId = loginResult.userId,
-                    username = loginResult.username,
-                    role = loginResult.role
+                    token = loginResult.first,
+                    userId = "",
+                    username = username,
+                    role = UserRole.valueOf(loginResult.second)
                 )
 
                 _currentRole.value = authManager.getRole()
@@ -160,16 +167,17 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
                 val driverId = authManager.getDriverId()
                 val userId = authManager.getUserId().orEmpty()
 
-                val target = if (authManager.getRole() == UserRole.DRIVER) {
+                val target =
+                    if (authManager.getRole() == UserRole.DRIVER) {
 
-                    list.find { driver ->
-                        (driverId != null && driver.id == driverId) ||
-                        (userId.isNotBlank() && driver.userId == userId)
+                        list.find { driver ->
+                            (driverId != null && driver.id == driverId) ||
+                            (userId.isNotBlank() && driver.userId == userId)
+                        }
+
+                    } else {
+                        list.firstOrNull()
                     }
-
-                } else {
-                    list.firstOrNull()
-                }
 
                 if (target != null) {
                     _selectedDriver.value = target
