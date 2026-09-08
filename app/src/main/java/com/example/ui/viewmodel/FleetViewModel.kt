@@ -122,7 +122,7 @@ class FleetViewModel(application: Application) : AndroidViewModel(application) {
                     token = loginResult.first,
                     userId = "",
                     username = username,
-                    role = UserRole.valueOf(loginResult.second)
+                    role = loginResult.second
                 )
 
                 _currentRole.value = authManager.getRole()
